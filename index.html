@@ -743,18 +743,20 @@ function simulateTournamentMatch(p1, p2) {
 
   while (hp1 > 0 && hp2 > 0 && turn <= 10) {
     let dmg1 = Math.max(5, Math.floor(p1.pow * 1.5 - p2.def * 0.5));
+    const actualDmg1 = Math.min(dmg1, Math.max(0, hp2));
     hp2 -= dmg1;
-    dmgDealt1 += dmg1;
-    recordStat(p1, 'solo', 'dmg', dmg1);
-    updateMaxHit(p1, 'solo', dmg1);
+    dmgDealt1 += actualDmg1;
+    recordStat(p1, 'solo', 'dmg', actualDmg1);
+    updateMaxHit(p1, 'solo', actualDmg1);
 
     if (hp2 <= 0) break;
 
     let dmg2 = Math.max(5, Math.floor(p2.pow * 1.5 - p1.def * 0.5));
+    const actualDmg2 = Math.min(dmg2, Math.max(0, hp1));
     hp1 -= dmg2;
-    dmgDealt2 += dmg2;
-    recordStat(p2, 'solo', 'dmg', dmg2);
-    updateMaxHit(p2, 'solo', dmg2);
+    dmgDealt2 += actualDmg2;
+    recordStat(p2, 'solo', 'dmg', actualDmg2);
+    updateMaxHit(p2, 'solo', actualDmg2);
 
     turn++;
   }
@@ -833,9 +835,11 @@ function simulateTeamMatch(t1Id, t2Id) {
         const injured = myTeam.filter(m => m.hp > 0 && m.hp < m.maxHp).sort((a,b)=>(a.hp/a.maxHp)-(b.hp/b.maxHp));
         if (injured.length > 0) {
           const healVal = Math.floor(unit.p.tec * 1.2 + unit.p.int * 1.5);
+          const hpBeforeHeal = injured[0].hp;
           injured[0].hp = Math.min(injured[0].maxHp, injured[0].hp + healVal);
-          recordStat(unit.p, 'team', 'heal', healVal);
-          logCombat(`${unit.p.name}の回復魔法！ ${injured[0].p.name}のHPが ${healVal} 回復`, "heal");
+          const actualHeal = Math.max(0, injured[0].hp - hpBeforeHeal);
+          if (actualHeal > 0) recordStat(unit.p, 'team', 'heal', actualHeal);
+          logCombat(`${unit.p.name}の回復魔法！ ${injured[0].p.name}のHPが ${actualHeal} 回復`, "heal");
           continue;
         }
       }
@@ -855,30 +859,33 @@ function simulateTeamMatch(t1Id, t2Id) {
       }
 
       let mult = (unit.p.job === 'アサシン' && Math.random() < 0.3) ? 2.0 : 1.2;
-      let dmg = Math.max(8, Math.floor((unit.p.pow * mult) - (target.p.def * 0.4)));
+      const calculatedDmg = Math.max(8, Math.floor((unit.p.pow * mult) - (target.p.def * 0.4)));
 
       // PREV: GUARDで元の対象より実ダメージが軽減された分のみ計上。
       // 通常DEFによる基礎軽減や回避はPREVへ含めない。
       if (guardActivated && originalTarget !== target) {
         const originalTargetDmg = Math.max(8, Math.floor((unit.p.pow * mult) - (originalTarget.p.def * 0.4)));
-        const prevented = Math.max(0, originalTargetDmg - dmg);
+        const prevented = Math.max(0, originalTargetDmg - calculatedDmg);
         if (prevented > 0) recordStat(target.p, 'team', 'prev', prevented);
       }
-      
-      target.hp -= dmg;
+
+      // 実DMGのみを記録。残HPを超えるオーバーキル分はDMG/ELIM貢献に含めない。
+      const hpBeforeHit = Math.max(0, target.hp);
+      const actualDmg = Math.min(calculatedDmg, hpBeforeHit);
+      target.hp -= calculatedDmg;
       
       // 累積ダメージ記録（ELIM / ASSIST判定用）
       const curDmg = target.damageByAttacker.get(unit.p.id) || 0;
-      target.damageByAttacker.set(unit.p.id, curDmg + dmg);
+      target.damageByAttacker.set(unit.p.id, curDmg + actualDmg);
       target.lastDamagerId = unit.p.id;
 
-      if (isTeam1) totalDmg1 += dmg;
-      else totalDmg2 += dmg;
+      if (isTeam1) totalDmg1 += actualDmg;
+      else totalDmg2 += actualDmg;
 
-      recordStat(unit.p, 'team', 'dmg', dmg);
-      updateMaxHit(unit.p, 'team', dmg);
+      recordStat(unit.p, 'team', 'dmg', actualDmg);
+      updateMaxHit(unit.p, 'team', actualDmg);
 
-      logCombat(`${unit.p.name}の攻撃 → ${target.p.name}へ ${dmg} ダメージ`);
+      logCombat(`${unit.p.name}の攻撃 → ${target.p.name}へ ${actualDmg} ダメージ`);
 
       if (target.hp <= 0) {
         logCombat(`${target.p.name} は倒れた！`, "kill");
@@ -1458,6 +1465,26 @@ function updateLeagueRecords() {
 }
 
 // ==========================================
+// TEAM CHAMPION CAREER RECORD
+// ==========================================
+function processTeamChampionTitle() {
+  const standings = calculateTeamStandings();
+  if (!standings.length) return;
+
+  const championTeam = teams.find(t => t.id === standings[0].teamId);
+  if (!championTeam) return;
+
+  const seasonKey = `team_champion_S${currentSeason}`;
+  players.filter(p => p.active && p.teamId === championTeam.id).forEach(p => {
+    ensureStatShape(p);
+    if (p.achievements[seasonKey]) return;
+    p.achievements[seasonKey] = true;
+    p.titles.teamChampion = (p.titles.teamChampion || 0) + 1;
+    p.careerHistory.push(`${p.age}歳 第${currentSeason}期 団体リーグ優勝 (${championTeam.name})`);
+  });
+}
+
+// ==========================================
 // DRAFT, GROWTH, DECAY & RETIREMENT ENGINE
 // ==========================================
 function processSeasonEnd() {
@@ -1465,11 +1492,15 @@ function processSeasonEnd() {
   lastSeasonStandings = calculateTeamStandings();
   retiredCountThisSeason = 0;
 
-  // 団体戦シーズン個人タイトル・歴代記録を確定（Season Statsリセット前）
+  // 団体リーグ優勝・個人タイトル・歴代記録を確定（Season Statsリセット前）
+  processTeamChampionTitle();
   processSeasonStatAwards();
 
   // シーズン終了時の成長・加齢・引退判定処理
   players.forEach(p => {
+    // 引退済み選手の年齢・能力・引退時OVRは永久保存する
+    if (!p.active) return;
+
     p.age += 1;
     p.seasonStartOvr = p.ovr;
 
@@ -1491,16 +1522,35 @@ function processSeasonEnd() {
         p[s] = Math.max(10, Math.min(99, p[s] + delta));
       });
     } else {
-      const spdDecay = Math.floor(Math.random() * 4 + 1);
-      const staDecay = Math.floor(Math.random() * 3 + 1);
-      p.spd = Math.max(15, p.spd - spdDecay);
-      p.sta = Math.max(20, p.sta - staDecay);
+      // 30代前半は全盛期の余韻を残し、年齢とともに身体能力低下の確率を上げる。
+      // 「30歳になった瞬間に毎年必ずSPD/STA低下」は行わない。
+      let physicalDecayChance = 0.15;
+      if (p.age >= 33 && p.age <= 35) physicalDecayChance = 0.30;
+      else if (p.age >= 36 && p.age <= 39) physicalDecayChance = 0.55;
+      else if (p.age >= 40 && p.age <= 44) physicalDecayChance = 0.75;
+      else if (p.age >= 45) physicalDecayChance = 0.90;
 
-      p.pow = Math.max(15, p.pow + Math.floor(Math.random() * 3 - 1.5));
-      p.def = Math.max(15, p.def + Math.floor(Math.random() * 3 - 1.5));
+      // メイジ/ヒーラーは高齢でも身体能力依存が比較的小さく、急激な衰退を少し抑える。
+      if (p.job === 'メイジ' || p.job === 'ヒーラー') physicalDecayChance *= 0.85;
 
-      if (Math.random() < 0.6) p.tec = Math.min(99, p.tec + Math.floor(Math.random() * 2));
-      if (Math.random() < 0.7) p.int = Math.min(99, p.int + Math.floor(Math.random() * 3));
+      if (Math.random() < physicalDecayChance) {
+        const spdDecay = p.age >= 40 ? (1 + Math.floor(Math.random() * 3)) : (1 + Math.floor(Math.random() * 2));
+        p.spd = Math.max(15, p.spd - spdDecay);
+      }
+      if (Math.random() < physicalDecayChance * 0.9) {
+        const staDecay = p.age >= 40 ? (1 + Math.floor(Math.random() * 2)) : 1;
+        p.sta = Math.max(20, p.sta - staDecay);
+      }
+
+      // POW/DEFは急落させず、維持を中心にごく小さく上下。
+      const powDefChangeChance = p.age <= 34 ? 0.25 : (p.age <= 39 ? 0.40 : 0.55);
+      if (Math.random() < powDefChangeChance) p.pow = Math.max(15, Math.min(99, p.pow + (Math.random() < 0.35 ? 1 : -1)));
+      if (Math.random() < powDefChangeChance) p.def = Math.max(15, Math.min(99, p.def + (Math.random() < 0.40 ? 1 : -1)));
+
+      // TEC/INTはベテランでも維持・成長可能。魔法職はより維持しやすい。
+      const techGrowthBonus = (p.job === 'メイジ' || p.job === 'ヒーラー') ? 0.15 : 0;
+      if (Math.random() < 0.45 + techGrowthBonus) p.tec = Math.min(99, p.tec + (Math.random() < 0.55 ? 1 : 0));
+      if (Math.random() < 0.55 + techGrowthBonus) p.int = Math.min(99, p.int + (Math.random() < 0.65 ? 1 : 0));
     }
 
     const oldOvr = p.ovr;
@@ -1763,6 +1813,9 @@ function finalizePick(teamId, prospectId, round, isFallback, competeCount) {
     competeCount: competeCount
   };
 
+  const draftLabel = round === 1 ? (isFallback ? 'ドラフト外れ1位' : 'ドラフト1巡目') : `ドラフト${round}巡目`;
+  prospect.careerHistory.push(`${prospect.age}歳 第${currentSeason}期 ${draftLabel}で${team.name}入団`);
+
   players.push(prospect);
   logDraft(`[確定] ${team.name} -> ${prospect.name} (${prospect.job}/OVR${prospect.ovr}) [${round}巡目${isFallback?'外れ':''}]`);
 }
@@ -1777,6 +1830,8 @@ function completeDraft() {
       if (p.retirementPending) {
         if (tPlayers.length > 5) {
           p.active = false;
+          p.retirementPending = false;
+          p.careerHistory.push(`${p.age}歳 第${currentSeason}期 現役引退 (${t.name})`);
           retiredCountThisSeason++;
           logDraft(`[引退] ${t.name}: ${p.name} 選手が正式引退しました。`);
           tPlayers = tPlayers.filter(x => x.id !== p.id);
