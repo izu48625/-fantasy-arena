@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ファンタジー闘技リーグ Ver.0.1 - KO決着・STATS完全版</title>
+<title>ファンタジー闘技リーグ Ver.0.1 - AUTO SAVE・大会修正版</title>
 <style>
   :root {
     --bg-main: #0f172a;
@@ -173,7 +173,7 @@
 <header>
   <div>
     <h1>ファンタジー闘技リーグ</h1>
-    <div style="font-size: 0.8rem; color: var(--text-sub);">Ver.0.1 KO決着・STATS完全版</div>
+    <div style="font-size: 0.8rem; color: var(--text-sub);">Ver.0.1 AUTO SAVE・大会修正版</div>
   </div>
   <div class="season-info" id="seasonDisplay">第1シーズン - 開幕前</div>
 </header>
@@ -194,6 +194,10 @@
     <button class="btn" id="btnNextMatch" onclick="runNextMatch()">次の試合を進行</button>
     <button class="btn btn-orange" id="btnAutoSeason" onclick="autoPlaySeason()">団体リーグ終了まで自動進行</button>
     <button class="btn btn-gold" id="btnStartTourney" onclick="startTournamentPhase()" style="display:none;">個人闘技選手権を開幕</button>
+    <button class="btn" onclick="manualSaveGame()">SAVE</button>
+    <button class="btn" onclick="manualLoadGame()">LOAD</button>
+    <button class="btn" onclick="newGameWithConfirm()">NEW GAME</button>
+    <span id="saveStatus" style="font-size:0.8rem;color:var(--text-sub);align-self:center;">AUTO SAVE: ON</span>
   </div>
   <div class="grid-2">
     <div class="card">
@@ -299,7 +303,7 @@
 <!-- CLUB MANAGEMENT -->
 <div id="club" class="view-section">
   <div class="card">
-    <div class="card-title">ロースター構成 (最大10名 / 5vs5出場メンバー選択)</div>
+    <div class="card-title">ロースター構成 (人数上限なし / 5vs5出場メンバーは5名)</div>
     <div class="table-container">
       <table>
         <thead>
@@ -477,7 +481,7 @@
 // CONSTANTS & CONFIGURATIONS
 // ==========================================
 const TEAM_BATTLE_MAX_TURNS = 24;
-const BUILD_ID = 'KO_ONLY_ASSIST_V24';
+const BUILD_ID = 'AUTOSAVE_TOURNEY_FIX_V25';
 
 const JOBS = ['ウォリアー', 'ナイト', 'アサシン', 'メイジ', 'ヒーラー', 'レンジャー'];
 const RACES = ['ヒューマン', 'エルフ', 'ドワーフ', '獣人'];
@@ -678,6 +682,227 @@ function createNewPlayer(name, age, race, job, teamId, potLevel = null, baseStat
 function resetStatObj() {
   return { m: 0, w: 0, l: 0, d: 0, elim: 0, kill: 0, assist: 0, dmg: 0, maxDmg: 0, bestDmg: 0, prev: 0, guard: 0, eva: 0, blk: 0, heal: 0 };
 }
+
+
+// ==========================================
+// PERSISTENCE / AUTO SAVE
+// ==========================================
+const SAVE_KEY = 'fantasyArenaLeagueSave_v25';
+let isRestoringSave = false;
+
+function playerIdOrNull(p) {
+  return p && p.id ? p.id : null;
+}
+
+function serializeTournamentState() {
+  return {
+    participantIds: (tournamentState.participants || []).map(playerIdOrNull).filter(Boolean),
+    rounds: (tournamentState.rounds || []).map(r => ({
+      name: r.name,
+      stageSize: r.stageSize,
+      completed: !!r.completed,
+      matches: (r.matches || []).map(m => ({
+        p1Id: playerIdOrNull(m.p1),
+        p2Id: playerIdOrNull(m.p2),
+        winnerId: playerIdOrNull(m.winner),
+        loserId: playerIdOrNull(m.loser),
+        isBye: !!m.isBye,
+        played: !!m.played,
+        isKO: !!m.isKO,
+        turns: m.turns || 0
+      }))
+    })),
+    currentRoundIndex: tournamentState.currentRoundIndex || 0,
+    userSelectedIds: Array.from(tournamentState.userSelectedIds || []),
+    championId: playerIdOrNull(tournamentState.champion),
+    summary: tournamentState.summary ? {
+      participants: tournamentState.summary.participants,
+      matches: tournamentState.summary.matches,
+      championId: playerIdOrNull(tournamentState.summary.champion),
+      clubName: tournamentState.summary.clubName
+    } : null
+  };
+}
+
+function restoreTournamentState(saved) {
+  const byId = id => id ? players.find(p => p.id === id) || null : null;
+  if (!saved) {
+    tournamentState = {
+      participants: [], rounds: [], currentRoundIndex: 0,
+      userSelectedIds: new Set(), champion: null, summary: null
+    };
+    return;
+  }
+  tournamentState = {
+    participants: (saved.participantIds || []).map(byId).filter(Boolean),
+    rounds: (saved.rounds || []).map(r => ({
+      name: r.name,
+      stageSize: r.stageSize,
+      completed: !!r.completed,
+      matches: (r.matches || []).map(m => ({
+        p1: byId(m.p1Id),
+        p2: byId(m.p2Id),
+        winner: byId(m.winnerId),
+        loser: byId(m.loserId),
+        isBye: !!m.isBye,
+        played: !!m.played,
+        isKO: !!m.isKO,
+        turns: m.turns || 0
+      }))
+    })),
+    currentRoundIndex: saved.currentRoundIndex || 0,
+    userSelectedIds: new Set(saved.userSelectedIds || []),
+    champion: byId(saved.championId),
+    summary: saved.summary ? {
+      participants: saved.summary.participants,
+      matches: saved.summary.matches,
+      champion: byId(saved.summary.championId),
+      clubName: saved.summary.clubName
+    } : null
+  };
+}
+
+function buildSaveData() {
+  return {
+    build: BUILD_ID,
+    savedAt: new Date().toISOString(),
+    currentSeason,
+    seasonPhase,
+    teams,
+    players,
+    draftProspects,
+    matchSchedule,
+    currentMatchIndex,
+    lastSeasonStandings,
+    leagueSnapshots,
+    retiredCountThisSeason,
+    championshipHistory,
+    leagueRecords,
+    statsSortCol,
+    statsSortAsc,
+    statsCompactMode,
+    draftSortCol,
+    draftSortAsc,
+    draftState,
+    tournamentState: serializeTournamentState()
+  };
+}
+
+function saveGameState(showMessage = false) {
+  if (isRestoringSave) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData()));
+    const el = document.getElementById('saveStatus');
+    if (el) el.textContent = `AUTO SAVE: ON / S${currentSeason} 保存済`;
+    if (showMessage) alert(`第${currentSeason}シーズンのデータを保存しました。`);
+  } catch (e) {
+    console.error('SAVE ERROR', e);
+    const el = document.getElementById('saveStatus');
+    if (el) el.textContent = 'AUTO SAVE: ERROR';
+    if (showMessage) alert('保存に失敗しました。ブラウザの保存領域を確認してください。');
+  }
+}
+
+function loadGameState(showMessage = false) {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return false;
+  try {
+    isRestoringSave = true;
+    const s = JSON.parse(raw);
+    currentSeason = s.currentSeason || 1;
+    seasonPhase = s.seasonPhase || 'REGULAR';
+    teams = s.teams || [];
+    players = s.players || [];
+    draftProspects = s.draftProspects || [];
+    matchSchedule = s.matchSchedule || [];
+    currentMatchIndex = s.currentMatchIndex || 0;
+    lastSeasonStandings = s.lastSeasonStandings || [];
+    leagueSnapshots = s.leagueSnapshots || [];
+    retiredCountThisSeason = s.retiredCountThisSeason || 0;
+    championshipHistory = s.championshipHistory || [];
+    leagueRecords = s.leagueRecords || leagueRecords;
+    statsSortCol = s.statsSortCol || 'ovr';
+    statsSortAsc = !!s.statsSortAsc;
+    statsCompactMode = !!s.statsCompactMode;
+    draftSortCol = s.draftSortCol || 'ovr';
+    draftSortAsc = !!s.draftSortAsc;
+    draftState = s.draftState || draftState;
+    players.forEach(ensureStatShape);
+    restoreTournamentState(s.tournamentState);
+    isRestoringSave = false;
+    restorePhaseUI();
+    updateUI();
+    if (showMessage) alert(`第${currentSeason}シーズンのセーブを読み込みました。`);
+    return true;
+  } catch (e) {
+    isRestoringSave = false;
+    console.error('LOAD ERROR', e);
+    if (showMessage) alert('セーブデータの読み込みに失敗しました。');
+    return false;
+  }
+}
+
+function restorePhaseUI() {
+  const startBtn = document.getElementById('btnStartTourney');
+  const nextBtn = document.getElementById('btnNextMatch');
+  const autoBtn = document.getElementById('btnAutoSeason');
+  const tabBtn = document.getElementById('tourneyTabBtn');
+  const selectionCard = document.getElementById('tourneySelectionCard');
+  const mainCard = document.getElementById('tourneyMainCard');
+  const nextRound = document.getElementById('btnNextTourneyRound');
+  const autoTourney = document.getElementById('btnAutoTourney');
+  const finishTourney = document.getElementById('btnFinishTourney');
+
+  if (startBtn) startBtn.style.display = 'none';
+  if (tabBtn) tabBtn.style.display = 'none';
+
+  if (seasonPhase === 'REGULAR') {
+    if (nextBtn) nextBtn.disabled = currentMatchIndex >= matchSchedule.length;
+    if (autoBtn) autoBtn.disabled = currentMatchIndex >= matchSchedule.length;
+    if (currentMatchIndex >= matchSchedule.length) {
+      if (startBtn) startBtn.style.display = 'inline-block';
+      if (tabBtn) tabBtn.style.display = 'inline-block';
+    }
+  } else if (seasonPhase === 'TOURNAMENT_SELECT') {
+    if (nextBtn) nextBtn.disabled = true;
+    if (autoBtn) autoBtn.disabled = true;
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (tabBtn) tabBtn.style.display = 'inline-block';
+    if (selectionCard) selectionCard.style.display = 'block';
+    if (mainCard) mainCard.style.display = 'none';
+    renderTournamentSelectionTable();
+  } else if (seasonPhase === 'TOURNAMENT_PLAY') {
+    if (nextBtn) nextBtn.disabled = true;
+    if (autoBtn) autoBtn.disabled = true;
+    if (tabBtn) tabBtn.style.display = 'inline-block';
+    if (selectionCard) selectionCard.style.display = 'none';
+    if (mainCard) mainCard.style.display = 'block';
+    updateTourneyRoundDropdown();
+    renderTournamentView();
+    const finished = !!tournamentState.champion;
+    if (nextRound) nextRound.disabled = finished;
+    if (autoTourney) autoTourney.disabled = finished;
+    if (finishTourney) finishTourney.style.display = finished ? 'inline-block' : 'none';
+  } else if (seasonPhase === 'DRAFT') {
+    if (nextBtn) nextBtn.disabled = true;
+    if (autoBtn) autoBtn.disabled = true;
+  }
+}
+
+function manualSaveGame() {
+  saveGameState(true);
+}
+
+function manualLoadGame() {
+  loadGameState(true);
+}
+
+function newGameWithConfirm() {
+  if (!confirm('現在のセーブを消してSeason 1から新しく始めますか？')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
 
 // ==========================================
 // INITIALIZATION
@@ -1221,6 +1446,11 @@ function confirmTourneyRoster() {
 
 function setupTournament(participantList) {
   seasonPhase = 'TOURNAMENT_PLAY';
+
+  // 毎シーズン大会操作ボタンを必ず初期化する
+  document.getElementById('btnNextTourneyRound').disabled = false;
+  document.getElementById('btnAutoTourney').disabled = false;
+  document.getElementById('btnFinishTourney').style.display = 'none';
 
   participantList.forEach(p => {
     p.tourneyAppearances = (p.tourneyAppearances || 0) + 1;
@@ -2276,6 +2506,9 @@ function updateUI() {
   renderStandings();
   renderMyRoster();
   renderDraftTable();
+
+  // 状態変更の大半はupdateUIへ到達するため、ここで自動保存する
+  saveGameState(false);
 }
 
 function calculateTeamStandings() {
@@ -2798,8 +3031,17 @@ function closeModal() {
 // ON LOAD INITIALIZATION
 // ==========================================
 window.onload = function() {
-  initGame();
+  // 保存があれば自動復帰。なければ新規ゲーム開始。
+  if (!loadGameState(false)) {
+    initGame();
+    saveGameState(false);
+  }
 };
+
+window.addEventListener('pagehide', () => saveGameState(false));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveGameState(false);
+});
 </script>
 </body>
 </html>
