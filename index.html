@@ -54,6 +54,55 @@
   th:hover { background-color: rgba(255,255,255,0.05); }
   tr:hover { background-color: var(--bg-card-hover); }
 
+
+  /* STATS mobile / screenshot helpers */
+  #stats .stats-toolbar-note {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    margin: -6px 0 10px;
+  }
+  #stats .table-container {
+    position: relative;
+  }
+  #statsTable {
+    min-width: max-content;
+  }
+  #statsTable th:first-child,
+  #statsTable td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg-card);
+    box-shadow: 1px 0 0 var(--border-color);
+  }
+  #statsTable th:first-child {
+    z-index: 3;
+    background: #172033;
+  }
+  #stats.stats-compact #statsTable {
+    font-size: 0.68rem;
+  }
+  #stats.stats-compact #statsTable th,
+  #stats.stats-compact #statsTable td {
+    padding: 4px 5px;
+    letter-spacing: -0.15px;
+  }
+  #stats.stats-compact #statsTable th:first-child,
+  #stats.stats-compact #statsTable td:first-child {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #stats.stats-compact .controls {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #stats.stats-compact select,
+  #stats.stats-compact .btn {
+    font-size: 0.74rem;
+    padding: 6px 8px;
+  }
+
   /* Grid Layouts */
   .grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; }
   @media (min-width: 768px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
@@ -232,7 +281,10 @@
         <option value="ヒーラー">ヒーラー</option>
         <option value="レンジャー">レンジャー</option>
       </select>
+      <button class="btn btn-orange" onclick="copyStatsReport()">COPY STATS</button>
+      <button class="btn" id="btnStatsCompact" onclick="toggleStatsCompact()">COMPACT表示</button>
     </div>
+    <div class="stats-toolbar-note">COPY STATSは現在の「今季/通算・団体/個人・クラブ・ジョブ・ソート順」をそのままコピーします。</div>
     <div class="table-container">
       <table id="statsTable">
         <thead>
@@ -489,6 +541,7 @@ let leagueRecords = {
 
 let statsSortCol = 'ovr';
 let statsSortAsc = false;
+let statsCompactMode = false;
 
 let draftSortCol = 'ovr';
 let draftSortAsc = false;
@@ -734,68 +787,69 @@ function autoPlaySeason() {
 // トーナメント用 1vs1 完全実戦闘処理
 function simulateTournamentMatch(p1, p2) {
   let hp1 = p1.sta * 12, hp2 = p2.sta * 12;
-  const maxHp1 = hp1, maxHp2 = hp2;
   let turn = 1;
   let dmgDealt1 = 0, dmgDealt2 = 0;
 
   recordStat(p1, 'solo', 'm', 1);
   recordStat(p2, 'solo', 'm', 1);
 
-  while (hp1 > 0 && hp2 > 0 && turn <= 10) {
-    let dmg1 = Math.max(5, Math.floor(p1.pow * 1.5 - p2.def * 0.5));
-    const actualDmg1 = Math.min(dmg1, Math.max(0, hp2));
-    hp2 -= dmg1;
+  // 個人闘技選手権はKO決着のみ。
+  // 現行1vs1には回復処理がなく、最低5DMGが保証されているため必ず決着する。
+  // 判定勝利・時間切れは使用しない。
+  while (hp1 > 0 && hp2 > 0) {
+    const rawDmg1 = Math.max(5, Math.floor(p1.pow * 1.5 - p2.def * 0.5));
+    const actualDmg1 = Math.min(rawDmg1, Math.max(0, hp2));
+    hp2 -= actualDmg1;
     dmgDealt1 += actualDmg1;
     recordStat(p1, 'solo', 'dmg', actualDmg1);
     updateMaxHit(p1, 'solo', actualDmg1);
 
     if (hp2 <= 0) break;
 
-    let dmg2 = Math.max(5, Math.floor(p2.pow * 1.5 - p1.def * 0.5));
-    const actualDmg2 = Math.min(dmg2, Math.max(0, hp1));
-    hp1 -= dmg2;
+    const rawDmg2 = Math.max(5, Math.floor(p2.pow * 1.5 - p1.def * 0.5));
+    const actualDmg2 = Math.min(rawDmg2, Math.max(0, hp1));
+    hp1 -= actualDmg2;
     dmgDealt2 += actualDmg2;
     recordStat(p2, 'solo', 'dmg', actualDmg2);
     updateMaxHit(p2, 'solo', actualDmg2);
 
     turn++;
-  }
 
-  let winner = null;
-  let loser = null;
-  let isKO = false;
-
-  if (hp1 > 0 && hp2 <= 0) {
-    winner = p1; loser = p2; isKO = true;
-  } else if (hp2 > 0 && hp1 <= 0) {
-    winner = p2; loser = p1; isKO = true;
-  } else {
-    // 判定勝利 (HP率 -> 総与DMG -> ランダム)
-    isKO = false;
-    const ratio1 = Math.max(0, hp1) / maxHp1;
-    const ratio2 = Math.max(0, hp2) / maxHp2;
-
-    if (ratio1 > ratio2) { winner = p1; loser = p2; }
-    else if (ratio2 > ratio1) { winner = p2; loser = p1; }
-    else if (dmgDealt1 > dmgDealt2) { winner = p1; loser = p2; }
-    else if (dmgDealt2 > dmgDealt1) { winner = p2; loser = p1; }
-    else {
-      if (Math.random() < 0.5) { winner = p1; loser = p2; }
-      else { winner = p2; loser = p1; }
+    // 将来1vs1へ回復・無効化を追加した場合の暴走防止。
+    // 現行仕様では通常ここへ到達しない。
+    if (turn > 1000) {
+      const sudden1 = Math.max(1, Math.ceil(Math.max(1, hp1) * 0.10));
+      const sudden2 = Math.max(1, Math.ceil(Math.max(1, hp2) * 0.10));
+      hp1 -= sudden1;
+      hp2 -= sudden2;
     }
   }
 
-  recordStat(winner, 'solo', 'w', 1);
-  if (isKO) {
-    recordStat(winner, 'solo', 'kill', 1);
+  let winner, loser;
+
+  if (hp1 > 0 && hp2 <= 0) {
+    winner = p1;
+    loser = p2;
+  } else if (hp2 > 0 && hp1 <= 0) {
+    winner = p2;
+    loser = p1;
+  } else {
+    // 将来、同時KO系の処理が追加された場合の保険。
+    // 現行の交互攻撃では通常発生しない。
+    winner = hp1 >= hp2 ? p1 : p2;
+    loser = winner.id === p1.id ? p2 : p1;
   }
+
+  recordStat(winner, 'solo', 'w', 1);
+  recordStat(winner, 'solo', 'kill', 1);
   recordStat(loser, 'solo', 'l', 1);
+
   updateBestDmg(p1, 'solo', dmgDealt1);
   updateBestDmg(p2, 'solo', dmgDealt2);
 
   winner.tourneyWins = (winner.tourneyWins || 0) + 1;
 
-  return { winner, loser, isKO };
+  return { winner, loser, isKO: true, turns: turn };
 }
 
 function simulateTeamMatch(t1Id, t2Id) {
@@ -2357,6 +2411,158 @@ function sortStats(col) {
     statsSortAsc = false;
   }
   renderStatsTable();
+}
+
+function toggleStatsCompact() {
+  statsCompactMode = !statsCompactMode;
+  const statsSection = document.getElementById('stats');
+  const btn = document.getElementById('btnStatsCompact');
+  if (statsSection) statsSection.classList.toggle('stats-compact', statsCompactMode);
+  if (btn) btn.textContent = statsCompactMode ? '通常表示' : 'COMPACT表示';
+}
+
+function getCurrentStatsRowsForExport() {
+  const type = document.getElementById('statsType').value;
+  const clubFilter = document.getElementById('filterClub').value;
+  const jobFilter = document.getElementById('filterJob').value;
+
+  let list = players.filter(p => p.active);
+  if (clubFilter !== 'ALL') list = list.filter(p => p.teamId === clubFilter);
+  if (jobFilter !== 'ALL') list = list.filter(p => p.job === jobFilter);
+
+  const isCareer = type.startsWith('career');
+  const isTeam = type.endsWith('team');
+
+  const statFor = p => isCareer
+    ? (isTeam ? p.careerStats.team : p.careerStats.solo)
+    : (isTeam ? p.seasonStats.team : p.seasonStats.solo);
+
+  const valueForSort = (p, col) => {
+    if (col === 'name' || col === 'job' || col === 'race') return p[col] || '';
+    if (col === 'club') {
+      const t = teams.find(x => x.id === p.teamId);
+      return t ? t.name : '-';
+    }
+    if (col === 'ovr' || col === 'age') return p[col] || 0;
+
+    const st = statFor(p);
+    if (!st) return 0;
+    if (col === 'winRate') return st.m > 0 ? st.w / st.m : 0;
+    if (col === 'avgDmg') return st.m > 0 ? st.dmg / st.m : 0;
+    if (col === 'avgHeal') return st.m > 0 ? st.heal / st.m : 0;
+    return st[col] || 0;
+  };
+
+  list.sort((a, b) => {
+    const aVal = valueForSort(a, statsSortCol);
+    const bVal = valueForSort(b, statsSortCol);
+    if (typeof aVal === 'string' || typeof bVal === 'string') {
+      return statsSortAsc
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    }
+    return statsSortAsc ? aVal - bVal : bVal - aVal;
+  });
+
+  return { type, clubFilter, jobFilter, list, statFor };
+}
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function copyStatsReport() {
+  players.forEach(ensureStatShape);
+
+  const { type, clubFilter, jobFilter, list, statFor } = getCurrentStatsRowsForExport();
+  const typeSelect = document.getElementById('statsType');
+  const clubSelect = document.getElementById('filterClub');
+  const jobSelect = document.getElementById('filterJob');
+
+  const typeLabel = typeSelect.options[typeSelect.selectedIndex]?.text || type;
+  const clubLabel = clubSelect.options[clubSelect.selectedIndex]?.text || clubFilter;
+  const jobLabel = jobSelect.options[jobSelect.selectedIndex]?.text || jobFilter;
+  const sortLabel = `${statsSortCol} ${statsSortAsc ? 'ASC' : 'DESC'}`;
+
+  const headers = [
+    'NAME','CLUB','AGE','JOB','OVR','GP','W','L','D','WIN%',
+    'ELIM','DMG','AVG_DMG','KILL','ASSIST','MAX_HIT','BEST_DMG',
+    'PREV','GUARD','EVA','HEAL','AVG_HEAL'
+  ];
+
+  const rows = list.map(p => {
+    const t = teams.find(x => x.id === p.teamId);
+    const st = statFor(p) || resetStatObj();
+    const winRate = st.m > 0 ? ((st.w / st.m) * 100).toFixed(1) : '0.0';
+    const avgDmg = st.m > 0 ? (st.dmg / st.m).toFixed(1) : '0.0';
+    const avgHeal = st.m > 0 ? (st.heal / st.m).toFixed(1) : '0.0';
+
+    return [
+      p.name,
+      t ? t.name : '-',
+      p.age,
+      p.job,
+      p.ovr,
+      st.m || 0,
+      st.w || 0,
+      st.l || 0,
+      st.d || 0,
+      winRate,
+      st.elim || 0,
+      st.dmg || 0,
+      avgDmg,
+      st.kill || 0,
+      st.assist || 0,
+      st.maxDmg || 0,
+      st.bestDmg || 0,
+      st.prev || 0,
+      st.guard || 0,
+      st.eva || 0,
+      st.heal || 0,
+      avgHeal
+    ].join('\t');
+  });
+
+  const text = [
+    'FANTASY ARENA STATS REPORT',
+    `SEASON: ${currentSeason}`,
+    `VIEW: ${typeLabel}`,
+    `CLUB FILTER: ${clubLabel}`,
+    `JOB FILTER: ${jobLabel}`,
+    `SORT: ${sortLabel}`,
+    `PLAYERS: ${list.length}`,
+    '',
+    headers.join('\t'),
+    ...rows
+  ].join('\n');
+
+  copyTextWithFallback(text).then(() => {
+    alert(`STATSをコピーしました（${list.length}選手）。`);
+  }).catch(() => {
+    alert('STATSのコピーに失敗しました。SafariでGitHub PagesのURLから開いて再度お試しください。');
+  });
 }
 
 function renderMyRoster() {
