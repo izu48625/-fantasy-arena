@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ファンタジー闘技リーグ Ver.0.1 - 個人闘技選手権実装版</title>
+<title>ファンタジー闘技リーグ Ver.0.1 - KO決着・STATS完全版</title>
 <style>
   :root {
     --bg-main: #0f172a;
@@ -173,7 +173,7 @@
 <header>
   <div>
     <h1>ファンタジー闘技リーグ</h1>
-    <div style="font-size: 0.8rem; color: var(--text-sub);">Ver.0.1 個人闘技選手権実装版</div>
+    <div style="font-size: 0.8rem; color: var(--text-sub);">Ver.0.1 KO決着・STATS完全版</div>
   </div>
   <div class="season-info" id="seasonDisplay">第1シーズン - 開幕前</div>
 </header>
@@ -477,6 +477,7 @@
 // CONSTANTS & CONFIGURATIONS
 // ==========================================
 const TEAM_BATTLE_MAX_TURNS = 24;
+const BUILD_ID = 'KO_ONLY_ASSIST_V24';
 
 const JOBS = ['ウォリアー', 'ナイト', 'アサシン', 'メイジ', 'ヒーラー', 'レンジャー'];
 const RACES = ['ヒューマン', 'エルフ', 'ドワーフ', '獣人'];
@@ -957,36 +958,49 @@ function simulateTeamMatch(t1Id, t2Id) {
             elimCandidates.push(attackerId);
           }
         });
+        let awardedElimPlayerId = null;
         if (elimCandidates.length > 0) {
-          let elimPlayerId = elimCandidates.includes(target.lastDamagerId)
+          awardedElimPlayerId = elimCandidates.includes(target.lastDamagerId)
             ? target.lastDamagerId
             : elimCandidates[Math.floor(Math.random() * elimCandidates.length)];
-          const elimPlayer = players.find(p => p.id === elimPlayerId);
+          const elimPlayer = players.find(p => p.id === awardedElimPlayerId);
           if (elimPlayer) recordStat(elimPlayer, 'team', 'elim', 1);
         }
 
-        // 既存ASSIST判定：KILL本人を除外した上で、該当敵への累積ダメージが最も高い味方1名に付与
-        let topAssistantId = null;
-        let maxDmgDealt = 0;
-        let candidateIds = [];
+        // ASSIST判定：
+        // KILL本人とELIM獲得者を除外し、その次に大きくダメージ貢献した味方1名だけを対象とする。
+        // さらに撃破対象が実際に受けた総DMGの15%以上を与えていることを条件とする。
+        // これにより ELIM=ASSIST の重複を抑え、ASSISTを「第2・第3の有意な撃破貢献」として独立させる。
+        const killPlayerId = unit.p.id;
+        const elimPlayerIdForAssist = awardedElimPlayerId;
+
+        const totalContribution = Array.from(target.damageByAttacker.values())
+          .reduce((sum, val) => sum + val, 0);
+        const assistThreshold = totalContribution * 0.15;
+
+        let maxAssistDmg = 0;
+        let assistCandidates = [];
 
         target.damageByAttacker.forEach((dmgVal, attackerId) => {
-          if (attackerId !== unit.p.id && dmgVal > 0) {
-            if (dmgVal > maxDmgDealt) {
-              maxDmgDealt = dmgVal;
-              candidateIds = [attackerId];
-            } else if (dmgVal === maxDmgDealt) {
-              candidateIds.push(attackerId);
+          if (
+            attackerId !== killPlayerId &&
+            attackerId !== elimPlayerIdForAssist &&
+            dmgVal >= assistThreshold &&
+            dmgVal > 0
+          ) {
+            if (dmgVal > maxAssistDmg) {
+              maxAssistDmg = dmgVal;
+              assistCandidates = [attackerId];
+            } else if (dmgVal === maxAssistDmg) {
+              assistCandidates.push(attackerId);
             }
           }
         });
 
-        if (candidateIds.length > 0) {
-          topAssistantId = candidateIds[Math.floor(Math.random() * candidateIds.length)];
+        if (assistCandidates.length > 0) {
+          const topAssistantId = assistCandidates[Math.floor(Math.random() * assistCandidates.length)];
           const assistant = players.find(p => p.id === topAssistantId);
-          if (assistant) {
-            recordStat(assistant, 'team', 'assist', 1);
-          }
+          if (assistant) recordStat(assistant, 'team', 'assist', 1);
         }
       }
     }
@@ -1991,7 +2005,7 @@ function renderDebugReport() {
     <div class="debug-card"><div class="debug-card-title">TEAM EVA TOTAL</div>${teamEvaTotal}</div>
     <div class="debug-card"><div class="debug-card-title">ASSIST / KILL RATIO</div>${assistKillRatio}</div>
     <div class="debug-card"><div class="debug-card-title">SOLO MATCHES TOTAL</div>${Math.floor(soloMatchesTotal)}</div>
-    <div class="debug-card"><div class="debug-card-title">SOLO KO WINS / DECISION WINS</div>${soloKoWinsTotal} / ${soloDecisionWinsTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">SOLO KO WINS / DECISION WINS (KO ONLY)</div>${soloKoWinsTotal} / ${soloDecisionWinsTotal}</div>
     <div class="debug-card"><div class="debug-card-title">SOLO KO RATE</div>${soloKoRate}%</div>
   `;
 
@@ -2179,6 +2193,8 @@ function copyDebugReport() {
   }
 
   const text = `FANTASY ARENA LEAGUE REPORT
+BUILD: ${BUILD_ID}
+SOLO RULE: KO ONLY
 
 SEASON: ${currentSeason}
 ACTIVE PLAYERS: ${activeP.length}
@@ -2547,6 +2563,7 @@ function copyStatsReport() {
 
   const text = [
     'FANTASY ARENA STATS REPORT',
+    `BUILD: ${BUILD_ID}`,
     `SEASON: ${currentSeason}`,
     `VIEW: ${typeLabel}`,
     `CLUB FILTER: ${clubLabel}`,
