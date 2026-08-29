@@ -1,0 +1,4039 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ファンタジー闘技リーグ Ver.0.1 - AUTO SAVE・大会修正版</title>
+<style>
+  :root {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --accent-blue: #38bdf8;
+    --accent-orange: #fb923c;
+    --accent-gold: #facc15;
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --border-color: #334155;
+    --win-color: #4ade80;
+    --lose-color: #f87171;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { background-color: var(--bg-main); color: var(--text-main); padding: 15px; line-height: 1.5; }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 2px solid var(--border-color); margin-bottom: 15px; }
+  h1 { font-size: 1.4rem; color: var(--accent-blue); }
+  .season-info { font-size: 1rem; font-weight: bold; color: var(--accent-orange); }
+
+  .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+  .tab-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-sub); padding: 8px 16px; border-radius: 6px; cursor: pointer; white-space: nowrap; font-weight: bold; }
+  .tab-btn.active { background: var(--accent-blue); color: #000; border-color: var(--accent-blue); }
+  .tab-btn.highlight-tab { border-color: var(--accent-gold); color: var(--accent-gold); }
+
+  .view-section { display: none; }
+  .view-section.active { display: block; }
+
+  .card { background: var(--bg-card); border-radius: 8px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 15px; }
+  .card-title { font-size: 1.1rem; color: var(--accent-blue); margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+
+  .controls { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+  .btn { background: var(--accent-blue); color: #0f172a; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.9; }
+  .btn-orange { background: var(--accent-orange); color: #fff; }
+  .btn-gold { background: var(--accent-gold); color: #000; }
+  .btn:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+
+  select, input { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 4px; }
+
+  /* Table styles */
+  .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+  th { background-color: rgba(0,0,0,0.2); color: var(--accent-blue); cursor: pointer; user-select: none; }
+  th:hover { background-color: rgba(255,255,255,0.05); }
+  tr:hover { background-color: var(--bg-card-hover); }
+
+
+  /* STATS mobile / screenshot helpers */
+  #stats .stats-toolbar-note {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    margin: -6px 0 10px;
+  }
+  #stats .table-container {
+    position: relative;
+  }
+  #statsTable {
+    min-width: max-content;
+  }
+  #statsTable th:first-child,
+  #statsTable td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg-card);
+    box-shadow: 1px 0 0 var(--border-color);
+  }
+  #statsTable th:first-child {
+    z-index: 3;
+    background: #172033;
+  }
+  #stats.stats-compact #statsTable {
+    font-size: 0.68rem;
+  }
+  #stats.stats-compact #statsTable th,
+  #stats.stats-compact #statsTable td {
+    padding: 4px 5px;
+    letter-spacing: -0.15px;
+  }
+  #stats.stats-compact #statsTable th:first-child,
+  #stats.stats-compact #statsTable td:first-child {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #stats.stats-compact .controls {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #stats.stats-compact select,
+  #stats.stats-compact .btn {
+    font-size: 0.74rem;
+    padding: 6px 8px;
+  }
+
+  /* Grid Layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; }
+  @media (min-width: 768px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+
+  /* Combat Logs */
+  .log-box { background: #000; color: #34d399; font-family: monospace; font-size: 0.8rem; height: 250px; overflow-y: auto; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); }
+  .log-line { margin-bottom: 4px; }
+  .log-line.highlight { color: var(--accent-orange); font-weight: bold; }
+  .log-line.heal { color: #60a5fa; }
+  .log-line.kill { color: #f87171; }
+
+  /* Modal & Player Detail UI */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 20px; position: relative; }
+  .close-btn { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: var(--text-sub); }
+
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .detail-title h2 { font-size: 1.4rem; color: var(--text-main); }
+  .detail-title p { font-size: 0.85rem; color: var(--text-sub); }
+  .detail-ovr-box { text-align: right; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--accent-orange); }
+  .detail-ovr-val { font-size: 1.8rem; font-weight: bold; color: var(--accent-orange); line-height: 1; }
+  .detail-ovr-lbl { font-size: 0.7rem; color: var(--text-sub); text-transform: uppercase; }
+
+  .stat-category { margin-top: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+  .stat-category-title { font-size: 0.8rem; font-weight: bold; color: var(--accent-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 1px; }
+
+  .stat-row { display: flex; align-items: center; font-size: 0.85rem; margin-bottom: 6px; font-family: monospace; }
+  .stat-name { width: 45px; font-weight: bold; color: var(--text-sub); }
+  .stat-rank { width: 25px; font-weight: bold; text-align: center; margin-right: 5px; }
+  .stat-rank-S { color: #eab308; }
+  .stat-rank-A { color: #a855f7; }
+  .stat-rank-B { color: #3b82f6; }
+  .stat-rank-C { color: #22c55e; }
+  .stat-rank-D { color: #64748b; }
+  .stat-rank-E { color: #64748b; }
+  .stat-rank-F { color: #475569; }
+  .stat-val { width: 35px; text-align: right; font-weight: bold; margin-right: 10px; color: var(--text-main); }
+  .stat-bar-bg { flex: 1; background: #0f172a; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid var(--border-color); }
+  .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #0284c7, var(--accent-blue)); border-radius: 5px; }
+
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+  .badge-pot-S { background: #eab308; color: #000; }
+  .badge-pot-A { background: #a855f7; color: #fff; }
+  .badge-pot-B { background: #3b82f6; color: #fff; }
+  .badge-pot-C { background: #22c55e; color: #000; }
+  .badge-pot-D { background: #64748b; color: #fff; }
+
+  .ovr-tag { font-weight: bold; color: var(--accent-orange); }
+
+  /* Debug Styles */
+  .debug-section { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+  .debug-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+  .debug-card { background: var(--bg-main); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.85rem; }
+  .debug-card-title { font-weight: bold; color: var(--accent-orange); margin-bottom: 5px; font-size: 0.9rem; }
+
+  .finance-debug-banner { border: 2px solid var(--accent-gold); background: rgba(250,204,21,0.06); }
+  .finance-debug-note { font-size:0.83rem; color:var(--text-sub); margin:6px 0 10px; }
+  .finance-debug-shot { display:inline-block; font-weight:bold; color:var(--accent-gold); margin-right:8px; }
+  .finance-status-ok { color: var(--win-color); font-weight:bold; }
+  .finance-status-watch { color: var(--accent-gold); font-weight:bold; }
+  .finance-status-bad { color: var(--lose-color); font-weight:bold; }
+  .finance-debug-table th, .finance-debug-table td { padding:6px 8px; font-size:0.78rem; }
+  @media (max-width: 720px) {
+    .finance-debug-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .finance-debug-table { min-width: 900px; }
+  }
+
+  /* Tournament UI Styles */
+  .tournament-card { background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+  .tournament-card.highlight-stage { border: 2px solid var(--accent-gold); box-shadow: 0 0 10px rgba(250, 204, 21, 0.2); }
+  .match-vs-container { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; gap: 10px; }
+  .match-player { flex: 1; background: var(--bg-card); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); }
+  .match-player.winner { border-color: var(--win-color); background: rgba(74, 222, 128, 0.1); }
+  .match-vs { font-weight: bold; color: var(--accent-orange); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>ファンタジー闘技リーグ</h1>
+    <div style="font-size: 0.8rem; color: var(--text-sub);">Ver.0.1 V32.0D1 16TEAM・財政デバッグ版</div>
+  </div>
+  <div class="season-info" id="seasonDisplay">第1シーズン - 開幕前</div>
+</header>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('dashboard')">ダッシュボード</button>
+  <button class="tab-btn" onclick="switchTab('standings')">順位表</button>
+  <button class="tab-btn highlight-tab" id="tourneyTabBtn" onclick="switchTab('tournament')" style="display:none;">個人闘技選手権</button>
+  <button class="tab-btn" onclick="switchTab('stats')">個人成績 (STATS)</button>
+  <button class="tab-btn" onclick="switchTab('club')">自クラブ管理</button>
+  <button class="tab-btn" id="draftTabBtn" onclick="switchTab('draft')">ドラフト</button>
+  <button class="tab-btn" onclick="switchTab('debugReport')" style="border-color: var(--accent-orange); color: var(--accent-orange);">DEBUG REPORT</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="view-section active">
+  <div class="controls">
+    <button class="btn" id="btnNextMatch" onclick="runNextMatch()">次の試合を進行</button>
+    <button class="btn btn-orange" id="btnAutoSeason" onclick="autoPlaySeason()">団体リーグ終了まで自動進行</button>
+    <button class="btn btn-gold" id="btnStartTourney" onclick="startTournamentPhase()" style="display:none;">個人闘技選手権を開幕</button>
+    <button class="btn" onclick="manualSaveGame()">SAVE</button>
+    <button class="btn" onclick="manualLoadGame()">LOAD</button>
+    <button class="btn" onclick="newGameWithConfirm()">NEW GAME</button>
+    <span id="saveStatus" style="font-size:0.8rem;color:var(--text-sub);align-self:center;">AUTO SAVE: ON</span>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">直近の試合結果 / ログ</div>
+      <div class="log-box" id="combatLog">
+        <div class="log-line">「次の試合を進行」を押すと試合を開始します。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">自クラブの状況</div>
+      <div id="dashMyClubInfo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STANDINGS -->
+<div id="standings" class="view-section">
+  <div class="card">
+    <div class="card-title">5vs5 団体リーグ順位表</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>順位</th><th>クラブ名</th><th>勝</th><th>負</th><th>分</th><th>勝率</th></tr>
+        </thead>
+        <tbody id="teamStandingsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOURNAMENT SECTION -->
+<div id="tournament" class="view-section">
+  <!-- Representative Selection Stage -->
+  <div class="card" id="tourneySelectionCard">
+    <div class="card-title">個人闘技選手権 - クラブ代表選手選出 (各クラブ4名)</div>
+    <p style="font-size:0.85rem; color:var(--text-sub); margin-bottom:12px;">今シーズンの最後を飾る「個人闘技選手権」に出場する代表4名を選択してください。</p>
+    <div class="controls">
+      <button class="btn" onclick="autoSelectUserTourneyRoster()">AUTO選出</button>
+      <button class="btn btn-gold" id="btnConfirmTourneyRoster" onclick="confirmTourneyRoster()">代表メンバー決定</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>選択</th><th>名前</th><th>年齢</th><th>種族</th><th>ジョブ</th><th>OVR</th><th>Potential</th><th>POW</th><th>DEF</th><th>STA</th><th>SPD</th><th>TEC</th><th>INT</th>
+          </tr>
+        </thead>
+        <tbody id="tourneySelectionBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tournament Bracket / Matches View Stage -->
+  <div class="card" id="tourneyMainCard" style="display:none;">
+    <div class="card-title" id="tourneyTitle">年間個人闘技選手権</div>
+    <div class="controls">
+      <select id="tourneyRoundSelect" onchange="renderTournamentView()"></select>
+      <button class="btn" id="btnNextTourneyRound" onclick="runNextTourneyRound()">次のラウンドを実行</button>
+      <button class="btn btn-orange" id="btnAutoTourney" onclick="autoPlayTournament()">大会を最後までAUTO</button>
+      <button class="btn btn-gold" id="btnFinishTourney" onclick="finishTournamentAndProceed()" style="display:none;">シーズン終了処理へ進行</button>
+    </div>
+    <div id="tourneyMatchesContainer"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="stats" class="view-section">
+  <div class="card">
+    <div class="controls">
+      <select id="statsType" onchange="renderStatsTable()">
+        <option value="season_team">今季 (5vs5 団体戦)</option>
+        <option value="season_solo">今季 (個人選手権 1vs1)</option>
+        <option value="career_team">通算 (5vs5 団体戦)</option>
+        <option value="career_solo">通算 (個人選手権 1vs1)</option>
+      </select>
+      <select id="filterClub" onchange="renderStatsTable()">
+        <option value="ALL">全クラブ</option>
+      </select>
+      <select id="filterJob" onchange="renderStatsTable()">
+        <option value="ALL">全ジョブ</option>
+        <option value="ウォリアー">ウォリアー</option>
+        <option value="ナイト">ナイト</option>
+        <option value="アサシン">アサシン</option>
+        <option value="メイジ">メイジ</option>
+        <option value="ヒーラー">ヒーラー</option>
+        <option value="レンジャー">レンジャー</option>
+      </select>
+      <button class="btn btn-orange" onclick="copyStatsReport()">COPY STATS</button>
+      <button class="btn" id="btnStatsCompact" onclick="toggleStatsCompact()">COMPACT表示</button>
+    </div>
+    <div class="stats-toolbar-note">COPY STATSは現在の「今季/通算・団体/個人・クラブ・ジョブ・ソート順」をそのままコピーします。</div>
+    <div class="table-container">
+      <table id="statsTable">
+        <thead>
+          <tr id="statsHeader"></tr>
+        </thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CLUB MANAGEMENT -->
+<div id="club" class="view-section">
+  <div class="card">
+    <div class="card-title">クラブ財政</div>
+    <div id="clubFinanceSummary" class="debug-grid" style="margin-bottom:14px;"></div>
+    <div class="card-title">ロースター構成 (最大10名 / 5vs5出場メンバーは5名)</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>5vs5出場</th>
+            <th>名前</th>
+            <th>年齢</th>
+            <th>種族</th>
+            <th>ジョブ</th>
+            <th>OVR</th>
+            <th>年俸</th>
+            <th>Potential</th>
+            <th>POW</th><th>DEF</th><th>STA</th><th>SPD</th><th>TEC</th><th>INT</th>
+            <th>引退状態</th>
+          </tr>
+        </thead>
+        <tbody id="myRosterBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DRAFT SECTION -->
+<div id="draft" class="view-section">
+  <div class="card">
+    <div class="card-title" id="draftStatusTitle">新人ドラフト会議</div>
+    <div id="draftControlPanel" class="controls"></div>
+    <div class="grid-2" style="margin-bottom:15px;">
+      <div>
+        <div class="controls">
+          <select id="draftFilterRace" onchange="renderDraftTable()">
+            <option value="ALL">全種族</option>
+            <option value="ヒューマン">ヒューマン</option>
+            <option value="エルフ">エルフ</option>
+            <option value="ドワーフ">ドワーフ</option>
+            <option value="獣人">獣人</option>
+          </select>
+          <select id="draftFilterJob" onchange="renderDraftTable()">
+            <option value="ALL">全ジョブ</option>
+            <option value="ウォリアー">ウォリアー</option>
+            <option value="ナイト">ナイト</option>
+            <option value="アサシン">アサシン</option>
+            <option value="メイジ">メイジ</option>
+            <option value="ヒーラー">ヒーラー</option>
+            <option value="レンジャー">レンジャー</option>
+          </select>
+        </div>
+        <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr id="draftHeader">
+                <th onclick="sortDraft('name')">名前</th>
+                <th onclick="sortDraft('age')">年齢▲</th>
+                <th onclick="sortDraft('race')">種族</th>
+                <th onclick="sortDraft('job')">ジョブ</th>
+                <th onclick="sortDraft('ovr')">OVR▼</th>
+                <th onclick="sortDraft('potential')">Potential予測</th>
+                <th onclick="sortDraft('background')">経歴/肩書き</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="draftProspectsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="card-title">ドラフト指名結果・ログ</div>
+        <div class="log-box" id="draftLog" style="height:380px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEBUG / LEAGUE REPORT -->
+<div id="debugReport" class="view-section">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div class="card-title" style="margin-bottom:0;">DEBUG / LEAGUE REPORT (READ ONLY)</div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+        <button class="btn btn-orange" onclick="copyDebugReport()">COPY REPORT</button>
+        <button class="btn btn-orange" onclick="copyBalanceTestResult()">COPY TEST RESULT</button>
+        <button class="btn" onclick="runBalanceTest(20,5)">FAST TEST 20×5</button>
+        <button class="btn btn-gold" onclick="runBalanceTest(100,10)">STANDARD 100×10</button>
+      </div>
+    </div>
+    
+    <div class="debug-section finance-debug-banner">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="card-title" style="margin-bottom:0;">FINANCE DEBUG / SCREENSHOT PANEL</div>
+        <button class="btn btn-gold" onclick="copyFinanceDebugReport()">COPY FINANCE DEBUG</button>
+      </div>
+      <div id="financeDebugTiming" class="finance-debug-note"></div>
+
+      <div class="card-title"><span class="finance-debug-shot">スクショ①</span>自クラブ財政・戦力</div>
+      <div id="financeDebugSummary" class="debug-grid finance-debug-grid"></div>
+
+      <div class="card-title" style="margin-top:14px;"><span class="finance-debug-shot">スクショ②</span>Tier別 財政比較</div>
+      <div id="financeDebugTier" class="table-container"></div>
+
+      <div class="card-title" style="margin-top:14px;"><span class="finance-debug-shot">スクショ③</span>16クラブ 財政一覧</div>
+      <div id="financeDebugClubs" class="table-container"></div>
+
+      <div class="card-title" style="margin-top:14px;">自クラブ 年俸内訳</div>
+      <div id="financeDebugRoster" class="table-container"></div>
+      <div class="finance-debug-note">基本は S1開始・S5終了・S10終了でこのパネルを撮影してください。異常な赤字・資金急増が出た場合はその時点も撮影。COPY FINANCE DEBUGなら同じ内容を文字で共有できます。</div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">AUTO BALANCE TEST</div>
+      <div id="balanceTestStatus" style="margin-bottom:8px;color:var(--text-sub);">未実行。FASTで軽く確認、STANDARDで正式判定します。</div>
+      <div id="balanceTestResult"></div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">基本統計</div>
+      <div id="reportBasic" class="debug-grid"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="debug-section">
+        <div class="card-title">OVR分布 (現役)</div>
+        <div id="reportOvrDist"></div>
+      </div>
+      <div class="debug-section">
+        <div class="card-title">年齢分布 (現役)</div>
+        <div id="reportAgeDist"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="debug-section">
+        <div class="card-title">Potential分布 (内部True)</div>
+        <div id="reportPotDist"></div>
+      </div>
+      <div class="debug-section">
+        <div class="card-title">年齢帯別平均OVR</div>
+        <div id="reportAgeOvr"></div>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">TEAM POWER RANKING</div>
+      <div id="reportTeamPower" class="table-container"></div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">ジョブ別統計</div>
+      <div id="reportJobs" class="table-container"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="debug-section">
+        <div class="card-title">年齢別トップ選手</div>
+        <div id="reportTopPlayers"></div>
+      </div>
+      <div class="debug-section">
+        <div class="card-title">今季最大変動 (OVR)</div>
+        <div id="reportGrowth"></div>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">個人成績バランス監視 (OFFENSE / DEFENSE / SUPPORT)</div>
+      <div id="reportAdvancedStats"></div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">ジョブ別 平均STATS</div>
+      <div id="reportJobAdvanced" class="table-container"></div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">歴代 個人闘技選手権 王者記録</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>SEASON</th><th>CHAMPION</th><th>AGE</th><th>JOB</th><th>OVR</th><th>CLUB</th>
+            </tr>
+          </thead>
+          <tbody id="reportChampionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <div class="card-title">シーズン推移比較 (0・5・10・15・20年)</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>SEASON</th><th>PLAYERS</th><th>AVG AGE</th><th>AVG OVR</th>
+              <th>OVR90+</th><th>AGE40+</th><th>RETIRED</th>
+            </tr>
+          </thead>
+          <tbody id="reportSnapshotsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="playerModal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// CONSTANTS & CONFIGURATIONS
+// ==========================================
+const TEAM_BATTLE_MAX_TURNS = 24;
+const BUILD_ID = 'ROSTER10_16TEAM_POS221_V32_0_FINDEBUG_D1';
+const OVR_MAX = 100;
+const SOLO_SELF_HEAL_MULTIPLIER = 0.55; // 将来SOLO自己回復を導入した場合の専用補正。現行V27の1vs1には自己回復処理なし。
+let fastSimulationMode = false;
+let balanceTestMode = false;
+let latestBalanceTestText = '';
+
+const JOBS = ['ウォリアー', 'ナイト', 'アサシン', 'メイジ', 'ヒーラー', 'レンジャー'];
+const FRONT_JOBS = ['ウォリアー','ナイト','アサシン'];
+const BACK_JOBS = ['メイジ','ヒーラー','レンジャー'];
+const getPositionGroup = job => FRONT_JOBS.includes(job) ? 'FRONT' : 'BACK';
+const RACES = ['ヒューマン', 'エルフ', 'ドワーフ', '獣人'];
+
+const OVR_WEIGHTS = {
+  'ウォリアー': { pow: 0.35, def: 0.20, sta: 0.20, spd: 0.15, tec: 0.10, int: 0.00 },
+  'ナイト':     { pow: 0.15, def: 0.35, sta: 0.30, spd: 0.10, tec: 0.05, int: 0.05 },
+  'アサシン':   { pow: 0.25, def: 0.10, sta: 0.10, spd: 0.35, tec: 0.20, int: 0.00 },
+  'メイジ':     { pow: 0.05, def: 0.10, sta: 0.10, spd: 0.15, tec: 0.25, int: 0.35 },
+  'ヒーラー':   { pow: 0.00, def: 0.15, sta: 0.15, spd: 0.15, tec: 0.25, int: 0.30 },
+  'レンジャー': { pow: 0.25, def: 0.10, sta: 0.15, spd: 0.25, tec: 0.25, int: 0.00 }
+};
+
+const INITIAL_TEAMS = [
+  { id:'t1',  name:'黒鉄騎士団', isPlayer:true,  tier:'PLAYER', prestige:32, wealth:28 },
+  { id:'t2',  name:'白銀魔導団', isPlayer:false, tier:'ELITE',  prestige:96, wealth:96 },
+  { id:'t3',  name:'紅蓮闘士団', isPlayer:false, tier:'STRONG', prestige:82, wealth:80 },
+  { id:'t4',  name:'蒼天旅団',   isPlayer:false, tier:'MID',    prestige:65, wealth:62 },
+  { id:'t5',  name:'黄金獅子団', isPlayer:false, tier:'ELITE',  prestige:94, wealth:98 },
+  { id:'t6',  name:'翡翠の風',   isPlayer:false, tier:'MID',    prestige:62, wealth:60 },
+  { id:'t7',  name:'紫電の影',   isPlayer:false, tier:'STRONG', prestige:80, wealth:78 },
+  { id:'t8',  name:'漆黒の牙',   isPlayer:false, tier:'STRONG', prestige:84, wealth:82 },
+  { id:'t9',  name:'蒼月聖騎士団', isPlayer:false, tier:'MID', prestige:64, wealth:63 },
+  { id:'t10', name:'灰燼傭兵団', isPlayer:false, tier:'LOW', prestige:45, wealth:43 },
+  { id:'t11', name:'天狼遊撃団', isPlayer:false, tier:'MID', prestige:61, wealth:59 },
+  { id:'t12', name:'深緑守護団', isPlayer:false, tier:'LOW', prestige:43, wealth:42 },
+  { id:'t13', name:'暁星魔導団', isPlayer:false, tier:'MID', prestige:67, wealth:65 },
+  { id:'t14', name:'鉄血傭兵団', isPlayer:false, tier:'LOW', prestige:41, wealth:40 },
+  { id:'t15', name:'白夜旅団',   isPlayer:false, tier:'LOW', prestige:39, wealth:38 },
+  { id:'t16', name:'辺境守備隊', isPlayer:false, tier:'LOW', prestige:36, wealth:34 }
+].map(t => ({...t, teamTier:t.tier, teamWins:0, teamLosses:0, teamDraws:0}));
+
+const INITIAL_NAMES = [
+  'レオン', 'ガレス', 'セリア', 'ルーク', 'フィアナ', 'ヴァルド', 'カイン', 'アリア',
+  'アルベルト', 'エレナ', 'ギルバート', 'シルヴィア', 'ロラン', 'ミレイア', 'クロード', 'ベアトリス',
+  'オズワルド', 'クララ', 'ダミアン', 'イヴ', 'ヒューゴ', 'ロザリア', 'イザーク', 'ソフィア',
+  'トリスタン', 'オリヴィア', 'ハルバート', 'カトリーナ', 'エドガー', 'リディア', 'マクシミリアン', 'ビアンカ',
+  'アーサー', 'ランスロット', 'ガウェイン', 'パーシヴァル', 'トリストラム', 'ボース', 'ガラハッド', 'ケイ'
+];
+
+// ==========================================
+// GAME STATE
+// ==========================================
+let currentSeason = 1;
+let seasonPhase = 'REGULAR'; // 'REGULAR', 'TOURNAMENT_SELECT', 'TOURNAMENT_PLAY', 'DRAFT'
+let teams = [];
+let players = [];
+let draftProspects = [];
+let matchSchedule = [];
+let currentMatchIndex = 0;
+let lastSeasonStandings = [];
+
+let leagueSnapshots = [];
+let retiredCountThisSeason = 0;
+let releasedCountThisSeason = 0;
+let championshipHistory = [];
+let leagueRecords = {
+  careerElim: { playerId: null, value: 0 },
+  seasonElim: { playerId: null, value: 0, season: null },
+  elimLeaderTitles: { playerId: null, value: 0 },
+  careerPrev: { playerId: null, value: 0 },
+  seasonPrev: { playerId: null, value: 0, season: null },
+  prevLeaderTitles: { playerId: null, value: 0 },
+  careerGuard: { playerId: null, value: 0 },
+  seasonGuard: { playerId: null, value: 0, season: null },
+  careerEva: { playerId: null, value: 0 },
+  careerHeal: { playerId: null, value: 0 },
+  seasonHeal: { playerId: null, value: 0, season: null },
+  seasonDmg: { playerId: null, value: 0, season: null }
+};
+
+let statsSortCol = 'ovr';
+let statsSortAsc = false;
+let statsCompactMode = false;
+
+let draftSortCol = 'ovr';
+let draftSortAsc = false;
+
+// TOURNAMENT STATE
+let tournamentState = {
+  participants: [],
+  rounds: [],
+  currentRoundIndex: 0,
+  userSelectedIds: new Set(),
+  champion: null,
+  summary: null
+};
+
+let draftState = {
+  round: 1,
+  phase: 'USER_PICK_1',
+  userPickId: null,
+  cpuPicks: {},
+  lotteryTargets: [],
+  lotteryWinners: {},
+  remainingTeams: [],
+  history: []
+};
+
+// ==========================================
+// HELPER FUNCTIONS & OVR CALCULATION
+// ==========================================
+function getStatRank(val) {
+  if (val >= 90) return 'S';
+  if (val >= 80) return 'A';
+  if (val >= 70) return 'B';
+  if (val >= 60) return 'C';
+  if (val >= 50) return 'D';
+  if (val >= 40) return 'E';
+  return 'F';
+}
+
+function calcOVR(p) {
+  const w = OVR_WEIGHTS[p.job] || OVR_WEIGHTS['ウォリアー'];
+  const raw = (p.pow * w.pow) + (p.def * w.def) + (p.sta * w.sta) + 
+              (p.spd * w.spd) + (p.tec * w.tec) + (p.int * w.int);
+  return Math.min(OVR_MAX, Math.max(40, Math.round(raw)));
+}
+
+function generatePotentialByAge(age) {
+  // V28: S/Aを希少化。若手でも大半はB以下になり、90+を世代級にする。
+  const rand = Math.random();
+  if (age <= 20) {
+    if (rand < 0.035) return 'S';
+    if (rand < 0.15) return 'A';
+    if (rand < 0.48) return 'B';
+    if (rand < 0.82) return 'C';
+    return 'D';
+  } else if (age <= 24) {
+    if (rand < 0.020) return 'S';
+    if (rand < 0.10) return 'A';
+    if (rand < 0.38) return 'B';
+    if (rand < 0.75) return 'C';
+    return 'D';
+  } else if (age <= 29) {
+    if (rand < 0.006) return 'S';
+    if (rand < 0.05) return 'A';
+    if (rand < 0.28) return 'B';
+    if (rand < 0.68) return 'C';
+    return 'D';
+  } else if (age <= 34) {
+    if (rand < 0.002) return 'S';
+    if (rand < 0.025) return 'A';
+    if (rand < 0.18) return 'B';
+    if (rand < 0.58) return 'C';
+    return 'D';
+  } else {
+    if (rand < 0.001) return 'S';
+    if (rand < 0.012) return 'A';
+    if (rand < 0.12) return 'B';
+    if (rand < 0.50) return 'C';
+    return 'D';
+  }
+}
+
+
+function generateDevelopmentType() {
+  const r = Math.random();
+  if (r < 0.20) return 'EARLY';
+  if (r < 0.75) return 'STANDARD';
+  if (r < 0.95) return 'LATE';
+  return 'ULTRA_LATE';
+}
+
+function getDevelopmentConfig(type) {
+  if (type === 'EARLY') return { ageOffset: 2, youngGrowth: 1.15 };
+  if (type === 'LATE') return { ageOffset: -2, youngGrowth: 0.90 };
+  if (type === 'ULTRA_LATE') return { ageOffset: -4, youngGrowth: 0.80 };
+  return { ageOffset: 0, youngGrowth: 1.00 };
+}
+
+function getOvrGrowthMultiplier(ovr) {
+  // V30: 平均OVRを大きく押し上げず、上位才能だけが90台へ抜けられるよう高OVR帯の壁を緩和。
+  if (ovr >= 100) return 0.00;
+  if (ovr >= 98) return 0.04;
+  if (ovr >= 95) return 0.12;
+  if (ovr >= 90) return 0.28;
+  if (ovr >= 85) return 0.48;
+  if (ovr >= 80) return 0.66;
+  if (ovr >= 75) return 0.78;
+  if (ovr >= 70) return 0.90;
+  return 1.00;
+}
+
+function scaledPositiveDelta(rawDelta, mult) {
+  if (rawDelta <= 0 || mult <= 0) return 0;
+  const scaled = rawDelta * mult;
+  const whole = Math.floor(scaled);
+  return whole + (Math.random() < (scaled - whole) ? 1 : 0);
+}
+
+function capPlayerStats(p) {
+  ['pow','def','sta','spd','tec','int'].forEach(k => {
+    p[k] = Math.max(10, Math.min(OVR_MAX, p[k]));
+  });
+}
+
+function createNewPlayer(name, age, race, job, teamId, potLevel = null, baseStats = null) {
+  const truePot = potLevel || generatePotentialByAge(age);
+  
+  let stats = baseStats;
+  if (!stats) {
+    const baseVal = 45 + Math.floor(Math.random() * 20);
+    stats = {
+      pow: baseVal + Math.floor(Math.random() * 15),
+      def: baseVal + Math.floor(Math.random() * 15),
+      sta: baseVal + Math.floor(Math.random() * 15),
+      spd: baseVal + Math.floor(Math.random() * 15),
+      tec: baseVal + Math.floor(Math.random() * 15),
+      int: baseVal + Math.floor(Math.random() * 15)
+    };
+  }
+
+  const p = {
+    id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+    name: name,
+    age: age,
+    race: race,
+    job: job,
+    teamId: teamId,
+    active: true,
+    exitType: null,
+    exitSeason: null,
+    retirementPending: false,
+    selectedForTeamMatch: false,
+    truePotential: truePot,
+    potential: truePot,
+    developmentType: generateDevelopmentType(),
+    pow: stats.pow,
+    def: stats.def,
+    sta: stats.sta,
+    spd: stats.spd,
+    tec: stats.tec,
+    int: stats.int,
+    seasonStartOvr: 0,
+    lastDeltaOvr: 0,
+    titles: { individualChampion: 0, teamChampion: 0, elimLeader: 0, dmgLeader: 0, prevLeader: 0, healLeader: 0 },
+    achievements: {},
+    tourneyAppearances: 0,
+    tourneyWins: 0,
+    careerHistory: [],
+    seasonStats: { team: resetStatObj(), solo: resetStatObj() },
+    careerStats: { team: resetStatObj(), solo: resetStatObj() },
+    draftHistory: null,
+    background: '生粋の闘士',
+    title: '新鋭'
+  };
+  p.ovr = calcOVR(p);
+  p.seasonStartOvr = p.ovr;
+  p.salary = calcPlayerSalary(p);
+  return p;
+}
+
+function resetStatObj() {
+  return { m: 0, w: 0, l: 0, d: 0, elim: 0, kill: 0, assist: 0, dmg: 0, maxDmg: 0, bestDmg: 0, prev: 0, guard: 0, eva: 0, blk: 0, heal: 0 };
+}
+
+
+// ==========================================\n// V32.0 CLUB FINANCE / SALARY FOUNDATION\n// ==========================================\nconst FINANCE_UNIT = '万G';\n\nfunction calcPlayerSalary(p) {\n  // 年俸はOVRを主軸に、希少な高OVRほど指数的に高くする。\n  // 現段階では自動査定のみ。契約交渉・FA・移籍は次段階で使用する。\n  const ovr = Math.max(40, p.ovr || calcOVR(p));\n  const skill = Math.max(0, ovr - 52);\n  let salary = 80 + skill * skill * 0.72;\n  const potBonus = {S:160, A:80, B:30, C:0, D:-20}[p.truePotential || p.potential] || 0;\n  const titleBonus = ((p.titles?.individualChampion || 0) * 70) + ((p.titles?.teamChampion || 0) * 25);\n  const ageFactor = p.age <= 22 ? 0.82 : p.age >= 35 ? 0.88 : 1.00;\n  salary = (salary + potBonus + titleBonus) * ageFactor;\n  return Math.max(50, Math.round(salary / 10) * 10);\n}\n\nfunction initializeTeamFinance(team) {\n  if (!Number.isFinite(team.balance)) {\n    // wealth/prestigeを初期資金へ反映。金満クラブは明確に余裕があるが、まだ戦力へ直接作用させない。\n    team.balance = Math.round(2800 + (team.wealth || 50) * 85 + (team.prestige || 50) * 25);\n  }\n  if (!Number.isFinite(team.lastRevenue)) team.lastRevenue = 0;\n  if (!Number.isFinite(team.lastPayroll)) team.lastPayroll = 0;\n  if (!Number.isFinite(team.lastProfit)) team.lastProfit = 0;\n  if (!Array.isArray(team.financeHistory)) team.financeHistory = [];\n}\n\nfunction ensureFinanceState() {\n  teams.forEach(initializeTeamFinance);\n  players.forEach(p => {\n    if (!Number.isFinite(p.salary)) p.salary = calcPlayerSalary(p);\n  });\n}\n\nfunction getTeamPayroll(teamId) {\n  return players.filter(p => p.active && p.teamId === teamId).reduce((sum,p) => sum + (Number.isFinite(p.salary) ? p.salary : calcPlayerSalary(p)), 0);\n}\n\nfunction refreshAllSalaries() {\n  players.filter(p => p.active).forEach(p => { p.salary = calcPlayerSalary(p); });\n}\n\nfunction settleSeasonFinances() {\n  ensureFinanceState();\n  const standings = calculateTeamStandings();\n  const rankMap = new Map(standings.map((s,i)=>[s.teamId,i+1]));\n  const champId = standings[0]?.teamId || null;\n  const soloChampTeamId = tournamentState.champion?.teamId || null;\n\n  teams.forEach(team => {\n    const payroll = getTeamPayroll(team.id);\n    const wins = team.teamWins || 0;\n    const rank = rankMap.get(team.id) || 16;\n    const baseRevenue = 1900 + (team.prestige || 50) * 28 + (team.wealth || 50) * 8;\n    const performanceRevenue = wins * 65 + Math.max(0, 17-rank) * 35;\n    const championBonus = team.id === champId ? 1100 : 0;\n    const soloBonus = team.id === soloChampTeamId ? 350 : 0;\n    const revenue = Math.round(baseRevenue + performanceRevenue + championBonus + soloBonus);\n    const profit = revenue - payroll;\n    team.balance = Math.round((team.balance || 0) + profit);\n    team.lastRevenue = revenue;\n    team.lastPayroll = payroll;\n    team.lastProfit = profit;\n    team.financeHistory.push({season:currentSeason,revenue,payroll,profit,balance:team.balance,rank,wins});\n    if (team.financeHistory.length > 30) team.financeHistory = team.financeHistory.slice(-30);\n  });\n}\n\nfunction formatMoney(v) {\n  const n = Math.round(Number(v) || 0);\n  return `${n.toLocaleString()}${FINANCE_UNIT}`;\n}\n
+// ==========================================
+// PERSISTENCE / AUTO SAVE
+// ==========================================
+const SAVE_KEY = 'fantasyArenaLeagueSave_v32_0_findebug_d1'; // V32.0D1: デバッグ版は専用セーブで空/破損セーブ混入を防止
+let isRestoringSave = false;
+
+// V31.6.1: バージョン更新ごとに残った旧セーブがSafariのlocalStorage容量を圧迫するため、
+// 現行セーブ以外のFANTASY ARENA旧キーだけを安全に削除する。
+function cleanupLegacyFantasySaves() {
+  try {
+    const prefix = 'fantasyArenaLeagueSave_';
+    const removeKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix) && k !== SAVE_KEY) removeKeys.push(k);
+    }
+    removeKeys.forEach(k => localStorage.removeItem(k));
+    return removeKeys.length;
+  } catch (e) {
+    console.warn('LEGACY SAVE CLEANUP ERROR', e);
+    return 0;
+  }
+}
+
+function getSaveSizeKB(data) {
+  try {
+    const json = typeof data === 'string' ? data : JSON.stringify(data);
+    return Math.round(new Blob([json]).size / 1024);
+  } catch (_) {
+    return 0;
+  }
+}
+
+function playerIdOrNull(p) {
+  return p && p.id ? p.id : null;
+}
+
+function serializeTournamentState() {
+  return {
+    participantIds: (tournamentState.participants || []).map(playerIdOrNull).filter(Boolean),
+    rounds: (tournamentState.rounds || []).map(r => ({
+      name: r.name,
+      stageSize: r.stageSize,
+      completed: !!r.completed,
+      matches: (r.matches || []).map(m => ({
+        p1Id: playerIdOrNull(m.p1),
+        p2Id: playerIdOrNull(m.p2),
+        winnerId: playerIdOrNull(m.winner),
+        loserId: playerIdOrNull(m.loser),
+        isBye: !!m.isBye,
+        played: !!m.played,
+        isKO: !!m.isKO,
+        turns: m.turns || 0
+      }))
+    })),
+    currentRoundIndex: tournamentState.currentRoundIndex || 0,
+    userSelectedIds: Array.from(tournamentState.userSelectedIds || []),
+    championId: playerIdOrNull(tournamentState.champion),
+    summary: tournamentState.summary ? {
+      participants: tournamentState.summary.participants,
+      matches: tournamentState.summary.matches,
+      championId: playerIdOrNull(tournamentState.summary.champion),
+      clubName: tournamentState.summary.clubName,
+      season: tournamentState.summary.season,
+      koWins: tournamentState.summary.koWins,
+      decisionWins: tournamentState.summary.decisionWins,
+      championSnapshot: tournamentState.summary.championSnapshot || null
+    } : null
+  };
+}
+
+function restoreTournamentState(saved) {
+  const playerMap = new Map(players.map(p => [p.id, p]));
+  const byId = id => id ? playerMap.get(id) || null : null;
+  if (!saved) {
+    tournamentState = {
+      participants: [], rounds: [], currentRoundIndex: 0,
+      userSelectedIds: new Set(), champion: null, summary: null
+    };
+    return;
+  }
+  tournamentState = {
+    participants: (saved.participantIds || []).map(byId).filter(Boolean),
+    rounds: (saved.rounds || []).map(r => ({
+      name: r.name,
+      stageSize: r.stageSize,
+      completed: !!r.completed,
+      matches: (r.matches || []).map(m => ({
+        p1: byId(m.p1Id),
+        p2: byId(m.p2Id),
+        winner: byId(m.winnerId),
+        loser: byId(m.loserId),
+        isBye: !!m.isBye,
+        played: !!m.played,
+        isKO: !!m.isKO,
+        turns: m.turns || 0
+      }))
+    })),
+    currentRoundIndex: saved.currentRoundIndex || 0,
+    userSelectedIds: new Set(saved.userSelectedIds || []),
+    champion: byId(saved.championId),
+    summary: saved.summary ? {
+      participants: saved.summary.participants,
+      matches: saved.summary.matches,
+      champion: byId(saved.summary.championId),
+      clubName: saved.summary.clubName,
+      season: saved.summary.season,
+      koWins: saved.summary.koWins,
+      decisionWins: saved.summary.decisionWins,
+      championSnapshot: saved.summary.championSnapshot || null
+    } : null
+  };
+}
+
+function buildSaveData() {
+  return {
+    build: BUILD_ID,
+    savedAt: new Date().toISOString(),
+    currentSeason,
+    seasonPhase,
+    teams,
+    players,
+    draftProspects,
+    matchSchedule,
+    currentMatchIndex,
+    lastSeasonStandings,
+    leagueSnapshots,
+    retiredCountThisSeason,
+    releasedCountThisSeason,
+    championshipHistory,
+    leagueRecords,
+    statsSortCol,
+    statsSortAsc,
+    statsCompactMode,
+    draftSortCol,
+    draftSortAsc,
+    draftState,
+    tournamentState: serializeTournamentState()
+  };
+}
+
+function saveGameState(showMessage = false) {
+  // V31.9.1: BALANCE TEST中は、手動SAVE・AUTO SAVE・pagehideを含め通常セーブへ一切書き込まない。
+  if (isRestoringSave || balanceTestMode || fastSimulationMode) return true;
+
+  const data = buildSaveData();
+  const json = JSON.stringify(data);
+  const saveKB = getSaveSizeKB(json);
+
+  const writeSave = () => {
+    localStorage.setItem(SAVE_KEY, json);
+    const el = document.getElementById('saveStatus');
+    if (el) el.textContent = `AUTO SAVE: ON / S${currentSeason} 保存済 (${saveKB}KB)`;
+    if (showMessage) alert(`第${currentSeason}シーズンのデータを保存しました。\n保存サイズ: ${saveKB}KB`);
+    return true;
+  };
+
+  try {
+    return writeSave();
+  } catch (e) {
+    console.warn('SAVE ERROR - cleanup and retry', e);
+
+    // Safariの容量超過時は、旧バージョンのセーブだけを削除して1回だけ再試行。
+    const removed = cleanupLegacyFantasySaves();
+    try {
+      const ok = writeSave();
+      if (showMessage && removed > 0) {
+        alert(`旧バージョンのセーブ ${removed}件を整理して保存領域を確保しました。`);
+      }
+      return ok;
+    } catch (retryError) {
+      console.error('SAVE RETRY ERROR', retryError);
+      const el = document.getElementById('saveStatus');
+      if (el) el.textContent = `AUTO SAVE: ERROR (${saveKB}KB)`;
+      if (showMessage) {
+        alert(`保存に失敗しました。\n現行セーブサイズ: ${saveKB}KB\nSafariの保存領域が不足しています。`);
+      }
+      return false;
+    }
+  }
+}
+
+function loadGameState(showMessage = false) {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return false;
+  try {
+    isRestoringSave = true;
+    const s = JSON.parse(raw);
+    // V32.0D1: 空/破損セーブを正常データとして読み込まない。
+    if (!Array.isArray(s.teams) || s.teams.length !== INITIAL_TEAMS.length || !Array.isArray(s.players) || s.players.length === 0) {
+      console.warn('INVALID SAVE: empty teams/players. Starting a fresh game.');
+      localStorage.removeItem(SAVE_KEY);
+      isRestoringSave = false;
+      return false;
+    }
+    currentSeason = s.currentSeason || 1;
+    seasonPhase = s.seasonPhase || 'REGULAR';
+    teams = s.teams || [];
+    players = s.players || [];
+    draftProspects = s.draftProspects || [];
+    matchSchedule = s.matchSchedule || [];
+    currentMatchIndex = s.currentMatchIndex || 0;
+    lastSeasonStandings = s.lastSeasonStandings || [];
+    leagueSnapshots = s.leagueSnapshots || [];
+    retiredCountThisSeason = s.retiredCountThisSeason || 0;
+    releasedCountThisSeason = s.releasedCountThisSeason || 0;
+    championshipHistory = s.championshipHistory || [];
+    leagueRecords = s.leagueRecords || leagueRecords;
+    statsSortCol = s.statsSortCol || 'ovr';
+    statsSortAsc = !!s.statsSortAsc;
+    statsCompactMode = !!s.statsCompactMode;
+    draftSortCol = s.draftSortCol || 'ovr';
+    draftSortAsc = !!s.draftSortAsc;
+    draftState = s.draftState || draftState;
+    players.forEach(ensureStatShape);
+    ensureFinanceState();
+    restoreTournamentState(s.tournamentState);
+    isRestoringSave = false;
+    restorePhaseUI();
+    updateUI();
+    if (showMessage) alert(`第${currentSeason}シーズンのセーブを読み込みました。`);
+    return true;
+  } catch (e) {
+    isRestoringSave = false;
+    console.error('LOAD ERROR', e);
+    if (showMessage) alert('セーブデータの読み込みに失敗しました。');
+    return false;
+  }
+}
+
+function restorePhaseUI() {
+  const startBtn = document.getElementById('btnStartTourney');
+  const nextBtn = document.getElementById('btnNextMatch');
+  const autoBtn = document.getElementById('btnAutoSeason');
+  const tabBtn = document.getElementById('tourneyTabBtn');
+  const selectionCard = document.getElementById('tourneySelectionCard');
+  const mainCard = document.getElementById('tourneyMainCard');
+  const nextRound = document.getElementById('btnNextTourneyRound');
+  const autoTourney = document.getElementById('btnAutoTourney');
+  const finishTourney = document.getElementById('btnFinishTourney');
+
+  if (startBtn) startBtn.style.display = 'none';
+  if (tabBtn) tabBtn.style.display = 'none';
+
+  if (seasonPhase === 'REGULAR') {
+    if (nextBtn) nextBtn.disabled = currentMatchIndex >= matchSchedule.length;
+    if (autoBtn) autoBtn.disabled = currentMatchIndex >= matchSchedule.length;
+    if (currentMatchIndex >= matchSchedule.length) {
+      if (startBtn) startBtn.style.display = 'inline-block';
+      if (tabBtn) tabBtn.style.display = 'inline-block';
+    }
+  } else if (seasonPhase === 'TOURNAMENT_SELECT') {
+    if (nextBtn) nextBtn.disabled = true;
+    if (autoBtn) autoBtn.disabled = true;
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (tabBtn) tabBtn.style.display = 'inline-block';
+    if (selectionCard) selectionCard.style.display = 'block';
+    if (mainCard) mainCard.style.display = 'none';
+    renderTournamentSelectionTable();
+  } else if (seasonPhase === 'TOURNAMENT_PLAY') {
+    if (nextBtn) nextBtn.disabled = true;
+    if (autoBtn) autoBtn.disabled = true;
+    if (tabBtn) tabBtn.style.display = 'inline-block';
+    if (selectionCard) selectionCard.style.display = 'none';
+    if (mainCard) mainCard.style.display = 'block';
+    updateTourneyRoundDropdown();
+    renderTournamentView();
+    const finished = !!tournamentState.champion;
+    if (nextRound) nextRound.disabled = finished;
+    if (autoTourney) autoTourney.disabled = finished;
+    if (finishTourney) finishTourney.style.display = finished ? 'inline-block' : 'none';
+  } else if (seasonPhase === 'DRAFT') {
+    if (nextBtn) nextBtn.disabled = true;
+    if (autoBtn) autoBtn.disabled = true;
+  }
+}
+
+function manualSaveGame() {
+  saveGameState(true);
+}
+
+function manualLoadGame() {
+  loadGameState(true);
+}
+
+function newGameWithConfirm() {
+  if (!confirm('現在のセーブを消してSeason 1から新しく始めますか？')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+function initGame() {
+  // V32.0D1: 新規ゲーム初期化は必ず完全なSeason 1状態から開始。
+  currentSeason = 1;
+  seasonPhase = 'REGULAR';
+  draftProspects = [];
+  matchSchedule = [];
+  currentMatchIndex = 0;
+  lastSeasonStandings = [];
+  teams = JSON.parse(JSON.stringify(INITIAL_TEAMS));
+  players = [];
+  leagueSnapshots = [];
+  retiredCountThisSeason = 0;
+  releasedCountThisSeason = 0;
+  championshipHistory = [];
+  leagueRecords = {
+    careerElim: { playerId: null, value: 0 },
+    seasonElim: { playerId: null, value: 0, season: null },
+    elimLeaderTitles: { playerId: null, value: 0 },
+    careerPrev: { playerId: null, value: 0 },
+    seasonPrev: { playerId: null, value: 0, season: null },
+    prevLeaderTitles: { playerId: null, value: 0 },
+    careerGuard: { playerId: null, value: 0 },
+    seasonGuard: { playerId: null, value: 0, season: null },
+    careerEva: { playerId: null, value: 0 },
+    careerHeal: { playerId: null, value: 0 },
+    seasonHeal: { playerId: null, value: 0, season: null },
+    seasonDmg: { playerId: null, value: 0, season: null }
+  };
+
+  let nameIdx = 0;
+  // V32.0: V31.12の戦闘・成長・初期クラブ戦力バランスを固定。
+  // ELITEの絶対優位を少し縮めつつ、LOW/PLAYERの弱小スタートは維持する。
+  const tierBase = { ELITE:62, STRONG:62, MID:60, LOW:56, PLAYER:53 };
+  const extraJobCycle = ['ウォリアー','ナイト','アサシン','メイジ','ヒーラー','レンジャー'];
+
+  teams.forEach((t, teamIdx) => {
+    t.teamWins = 0; t.teamLosses = 0; t.teamDraws = 0;
+
+    // 全クラブが全6職を最低1人保持。追加4枠もリーグ全体で循環させ、職業人口の偏りを抑える。
+    const initialJobs = [...JOBS];
+    for (let k = 0; k < 4; k++) initialJobs.push(extraJobCycle[(teamIdx * 4 + k) % extraJobCycle.length]);
+    // 同じ並びになりすぎないよう軽くシャッフル。
+    for (let i = initialJobs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [initialJobs[i], initialJobs[j]] = [initialJobs[j], initialJobs[i]];
+    }
+
+    for (let i = 0; i < 10; i++) {
+      const suffixNum = Math.floor(nameIdx / INITIAL_NAMES.length);
+      const suffix = suffixNum > 0 ? ' ' + String.fromCharCode(64 + suffixNum) : '';
+      const name = INITIAL_NAMES[nameIdx % INITIAL_NAMES.length] + suffix;
+      nameIdx++;
+
+      // V31.4: 初期10人の年代構成をクラブごとに安定化。
+      // 18-22×2 / 23-26×3 / 27-30×3 / 31-34×1 / 35-38×1 を基本形にする。
+      const ageBands = [[18,22],[18,22],[23,26],[23,26],[23,26],[27,30],[27,30],[27,30],[31,34],[35,38]];
+      const [ageMin, ageMax] = ageBands[i];
+      const age = ageMin + Math.floor(Math.random() * (ageMax - ageMin + 1));
+
+      const race = RACES[Math.floor(Math.random()*RACES.length)];
+      const job = initialJobs[i];
+      const ageMaturity = Math.min(6, Math.max(0, age-20)*0.35);
+      const baseVal = tierBase[t.tier] + Math.floor(Math.random()*7) + Math.floor(ageMaturity);
+      const bStats = {
+        pow:Math.min(96,baseVal+(job==='ウォリアー'?10:job==='アサシン'?5:job==='レンジャー'?5:0)),
+        def:Math.min(96,baseVal+(job==='ナイト'?12:job==='ウォリアー'?4:0)),
+        sta:Math.min(96,baseVal+((job==='ナイト'||job==='ウォリアー')?8:job==='ヒーラー'?3:0)),
+        spd:Math.min(96,baseVal+((job==='アサシン'||job==='レンジャー')?12:job==='メイジ'?3:0)),
+        tec:Math.min(96,baseVal+((job==='ヒーラー'||job==='レンジャー')?10:job==='メイジ'?6:job==='アサシン'?5:0)),
+        int:Math.min(96,baseVal+((job==='メイジ'||job==='ヒーラー')?14:0))
+      };
+      const p = createNewPlayer(name, age, race, job, t.id, null, bStats);
+      p.selectedForTeamMatch = false;
+      players.push(p);
+    }
+  });
+
+  // 開幕スター層：160人中 90+を2〜3人、85〜89を3〜5人、80〜84を5〜8人程度。
+  // 名門ほど候補になりやすいが、完全独占はさせない。
+  const openingPool = players.filter(p => p.active && !teams.find(t=>t.id===p.teamId)?.isPlayer).sort((a,b) => {
+    const ta=teams.find(t=>t.id===a.teamId), tb=teams.find(t=>t.id===b.teamId);
+    // V31.12: 開幕スターのELITE集中も少し緩和。スター総数・目標OVR自体は変更しない。
+    const tierBonus = x => x?.tier==='ELITE'?5:x?.tier==='STRONG'?4:x?.tier==='MID'?2:0;
+    return (b.ovr+tierBonus(tb)+Math.random()*1.5) - (a.ovr+tierBonus(ta)+Math.random()*1.5);
+  });
+  const superstarCount = 2 + Math.floor(Math.random() * 2); // 2-3
+  const elite85Count = 3 + Math.floor(Math.random() * 3);   // 3-5
+  const star80Count = 5 + Math.floor(Math.random() * 4);    // 5-8
+  const starTargets = [];
+  for (let i = 0; i < superstarCount; i++) starTargets.push(90 + Math.floor(Math.random() * 3));
+  for (let i = 0; i < elite85Count; i++) starTargets.push(85 + Math.floor(Math.random() * 5));
+  for (let i = 0; i < star80Count; i++) starTargets.push(80 + Math.floor(Math.random() * 5));
+
+  const raisePlayerToTargetOvr = (p, target) => {
+    let guard = 0;
+    while (p.ovr < target && guard++ < 240) {
+      const w = OVR_WEIGHTS[p.job] || OVR_WEIGHTS['ウォリアー'];
+      const keys = ['pow','def','sta','spd','tec','int'].filter(k => w[k] > 0 && p[k] < 100);
+      if (!keys.length) break;
+      keys.sort((a,b) => w[b] - w[a]);
+      const bestWeight = w[keys[0]];
+      const nearBest = keys.filter(k => w[k] >= bestWeight - 0.10);
+      const k = nearBest[Math.floor(Math.random() * nearBest.length)];
+      p[k] = Math.min(100, p[k] + 1);
+      p.ovr = calcOVR(p);
+    }
+    p.seasonStartOvr = p.ovr;
+  };
+
+  starTargets.forEach((target, i) => {
+    const p = openingPool[i];
+    if (!p) return;
+    raisePlayerToTargetOvr(p, target);
+    if (target >= 90) {
+      p.truePotential = 'S'; p.potential = 'S'; p.title = 'リーグの至宝';
+    } else if (target >= 85 && ['C','D'].includes(p.truePotential)) {
+      p.truePotential = 'A'; p.potential = 'A';
+    } else if (target >= 80 && p.truePotential === 'D') {
+      p.truePotential = 'B'; p.potential = 'B';
+    }
+  });
+
+  ensureFinanceState();
+  refreshAllSalaries();
+  normalizeStartingSelections();
+  saveLeagueSnapshot(0);
+  generateSchedule();
+  updateUI();
+}
+
+function generateSchedule() {
+  matchSchedule = [];
+  currentMatchIndex = 0;
+
+  teams.forEach(t => {
+    t.teamWins = 0;
+    t.teamLosses = 0;
+    t.teamDraws = 0;
+  });
+  
+  // 5vs5 団体戦のみのホーム＆アウェイ2回戦総当たり
+  for (let r = 0; r < 2; r++) {
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        matchSchedule.push({ type: 'TEAM', t1: teams[i].id, t2: teams[j].id });
+      }
+    }
+  }
+}
+
+// ==========================================
+// COMBAT ENGINE (5vs5 & 1vs1)
+// ==========================================
+function finishRegularSeasonPhase() {
+  seasonPhase = 'TOURNAMENT_SELECT';
+  document.getElementById('btnStartTourney').style.display = 'inline-block';
+  document.getElementById('tourneyTabBtn').style.display = 'inline-block';
+  document.getElementById('btnNextMatch').disabled = true;
+  document.getElementById('btnAutoSeason').disabled = true;
+}
+
+function runNextMatch(skipUi = false) {
+  if (currentMatchIndex >= matchSchedule.length) {
+    finishRegularSeasonPhase();
+    if (!skipUi) {
+      logCombat("【団体リーグ全日程終了】「個人闘技選手権を開幕」ボタンを押して年間個人トーナメントへ進んでください。", "highlight");
+      updateUI();
+    }
+    return;
+  }
+
+  const match = matchSchedule[currentMatchIndex++];
+  if (match.type === 'TEAM') simulateTeamMatch(match.t1, match.t2);
+  if (!skipUi) updateUI();
+}
+
+function autoPlaySeason() {
+  const started = performance.now();
+  fastSimulationMode = true;
+  try {
+    while (currentMatchIndex < matchSchedule.length) {
+      runNextMatch(true);
+    }
+    finishRegularSeasonPhase();
+  } finally {
+    fastSimulationMode = false;
+  }
+  updateUI();
+  logCombat(`【高速AUTO完了】団体リーグ全日程を ${(performance.now()-started).toFixed(0)}ms で処理しました。`, 'highlight');
+}
+
+// トーナメント用 1vs1 完全実戦闘処理
+function simulateTournamentMatch(p1, p2) {
+  // V28 SOLO: KO ONLYは維持しつつ、ナイトのSTA+DEF二重優位を軽減。
+  // HPはSTA依存を弱め、攻撃順はSPD+乱数で毎ターン決定する。
+  let hp1 = Math.round(p1.sta * 6.2 + p1.def * 1.2 + 220), hp2 = Math.round(p2.sta * 6.2 + p2.def * 1.2 + 220);
+  let turn = 1;
+  let dmgDealt1 = 0, dmgDealt2 = 0;
+
+  recordStat(p1, 'solo', 'm', 1);
+  recordStat(p2, 'solo', 'm', 1);
+
+  const soloAttack = (attacker, defender, defenderHp) => {
+    // TEC/SPDも火力へ寄与させ、POWだけでなく各攻撃職の個性を反映。
+    const offense = attacker.pow * 0.92 + attacker.tec * 0.34 + attacker.int * 0.24 + attacker.spd * 0.18;
+    // DEFの効率をV27より下げる。ナイトだけが長期戦を独占しにくくする。
+    const defense = defender.def * 0.34 + defender.tec * 0.06;
+    const variance = 0.86 + Math.random() * 0.28;
+    // V31.7: S10通算勝率を受けて個人戦のみ微調整。
+    // ヒーラーを底上げし、アサシンの上振れを少し抑える。団体戦には影響させない。
+    const soloJobMult = { 'ウォリアー':0.98, 'ナイト':0.98, 'アサシン':1.01, 'メイジ':1.15, 'ヒーラー':1.09, 'レンジャー':0.985 }[attacker.job] || 1.00;
+    const raw = Math.max(7, Math.floor((offense - defense) * variance * soloJobMult));
+    return Math.min(raw, Math.max(0, defenderHp));
+  };
+
+  while (hp1 > 0 && hp2 > 0) {
+    // 先手固定を廃止。SPD優位はあるが乱数で逆転可能。
+    const initiative1 = p1.spd + Math.random() * 35;
+    const initiative2 = p2.spd + Math.random() * 35;
+    const order = initiative1 >= initiative2 ? [[p1, p2, 1], [p2, p1, 2]] : [[p2, p1, 2], [p1, p2, 1]];
+
+    for (const [attacker, defender, side] of order) {
+      if (hp1 <= 0 || hp2 <= 0) break;
+      if (side === 1) {
+        const dmg = soloAttack(attacker, defender, hp2);
+        hp2 -= dmg; dmgDealt1 += dmg;
+        recordStat(p1, 'solo', 'dmg', dmg); updateMaxHit(p1, 'solo', dmg);
+      } else {
+        const dmg = soloAttack(attacker, defender, hp1);
+        hp1 -= dmg; dmgDealt2 += dmg;
+        recordStat(p2, 'solo', 'dmg', dmg); updateMaxHit(p2, 'solo', dmg);
+      }
+    }
+
+    turn++;
+    if (turn > 1000) { hp1 -= Math.max(1, Math.ceil(hp1 * 0.10)); hp2 -= Math.max(1, Math.ceil(hp2 * 0.10)); }
+  }
+
+  let winner, loser;
+  if (hp1 > 0 && hp2 <= 0) { winner = p1; loser = p2; }
+  else if (hp2 > 0 && hp1 <= 0) { winner = p2; loser = p1; }
+  else { winner = hp1 >= hp2 ? p1 : p2; loser = winner.id === p1.id ? p2 : p1; }
+
+  recordStat(winner, 'solo', 'w', 1);
+  recordStat(winner, 'solo', 'kill', 1);
+  recordStat(loser, 'solo', 'l', 1);
+  updateBestDmg(p1, 'solo', dmgDealt1);
+  updateBestDmg(p2, 'solo', dmgDealt2);
+  winner.tourneyWins = (winner.tourneyWins || 0) + 1;
+  return { winner, loser, isKO: true, turns: turn };
+}
+
+function getLegalStartingFive(team, useManualPreference = true) {
+  const active = players.filter(p => p.teamId === team.id && p.active);
+  if (active.length <= 5) return active;
+  const preferred = new Set((team.isPlayer && useManualPreference) ? active.filter(p=>p.selectedForTeamMatch).map(p=>p.id) : []);
+  let best = null, bestScore = -Infinity;
+  for (let a=0;a<active.length-4;a++) for(let b=a+1;b<active.length-3;b++) for(let c=b+1;c<active.length-2;c++) for(let d=c+1;d<active.length-1;d++) for(let e=d+1;e<active.length;e++) {
+    const five=[active[a],active[b],active[c],active[d],active[e]];
+    const front=five.filter(p=>getPositionGroup(p.job)==='FRONT').length;
+    const back=5-front;
+    if (front < 2 || back < 2) continue;
+    let score=five.reduce((sum,p)=>sum+p.ovr,0);
+    // V31.6: CPUの軽い編成適性評価はV31.5から据え置き。
+    // ヒーラー1枚を自然に選びやすくするが、低OVRヒーラーを強制起用するほどは重くしない。
+    if (!team.isPlayer) {
+      const healerCount = five.filter(p=>p.job==='ヒーラー').length;
+      if (healerCount === 0) score -= 2.5;
+      else if (healerCount === 1) score += 2.5;
+      else if (healerCount >= 2) score -= 0.5;
+    }
+    if (team.isPlayer && useManualPreference) score += five.filter(p=>preferred.has(p.id)).length*1000;
+    if (score>bestScore) {bestScore=score; best=five;}
+  }
+  return best || [...active].sort((a,b)=>b.ovr-a.ovr).slice(0,5);
+}
+
+function getReportAge(p) {
+  return (seasonPhase === 'DRAFT' && Number.isFinite(p.seasonReportAge)) ? p.seasonReportAge : p.age;
+}
+function getReportOvr(p) {
+  return (seasonPhase === 'DRAFT' && Number.isFinite(p.seasonReportOvr)) ? p.seasonReportOvr : p.ovr;
+}
+
+function simulateTeamMatch(t1Id, t2Id) {
+  const t1 = teams.find(t => t.id === t1Id);
+  const t2 = teams.find(t => t.id === t2Id);
+  
+  // 2前衛+2後衛+FREE1の合法編成から最適5人を選出。
+
+  let roster1 = getLegalStartingFive(t1, true);
+  let roster2 = getLegalStartingFive(t2, true);
+
+  logCombat(`=== 5vs5 団体戦: ${t1.name} vs ${t2.name} ===`, "highlight");
+
+  const matchStartDmg = new Map([...roster1, ...roster2].map(p => [p.id, p.seasonStats.team.dmg]));
+  let state1 = roster1.map(p => ({ p, hp: p.sta * 10, maxHp: p.sta * 10, mp: p.job === 'ヒーラー' ? 100 : 0, maxMp: p.job === 'ヒーラー' ? 100 : 0, damageByAttacker: new Map(), lastDamagerId: null }));
+  let state2 = roster2.map(p => ({ p, hp: p.sta * 10, maxHp: p.sta * 10, mp: p.job === 'ヒーラー' ? 100 : 0, maxMp: p.job === 'ヒーラー' ? 100 : 0, damageByAttacker: new Map(), lastDamagerId: null }));
+
+  // V31.10: 団体戦ヒーラーにMP制を導入。
+  // 各ヒーラー MP100 / 回復魔法 MP35 / 戦闘中のMP自然回復なし。
+  // 回復効率（主80%、2人目以降35%）と0ヒーラー応急回復1.5%は比較のため維持。
+  const TEAM_HEALER_MAX_MP = 100;
+  const TEAM_HEAL_MP_COST = 35;
+  const primaryHealerId = roster => {
+    const hs = roster.filter(p => p.job === 'ヒーラー');
+    if (hs.length <= 1) return hs[0]?.id || null;
+    hs.sort((a,b) => ((b.tec * 1.2 + b.int * 1.5) - (a.tec * 1.2 + a.int * 1.5)) || (b.ovr - a.ovr));
+    return hs[0].id;
+  };
+  const primaryHealer1 = primaryHealerId(roster1);
+  const primaryHealer2 = primaryHealerId(roster2);
+
+  let turn = 1;
+  let totalDmg1 = 0;
+  let totalDmg2 = 0;
+
+  while (state1.some(s=>s.hp>0) && state2.some(s=>s.hp>0) && turn <= TEAM_BATTLE_MAX_TURNS) {
+    let allUnits = [...state1.filter(s=>s.hp>0), ...state2.filter(s=>s.hp>0)];
+    allUnits.sort((a,b) => b.p.spd - a.p.spd);
+
+    for (let unit of allUnits) {
+      if (unit.hp <= 0) continue;
+      
+      const isTeam1 = state1.includes(unit);
+      const myTeam = isTeam1 ? state1 : state2;
+      const oppTeam = isTeam1 ? state2 : state1;
+      const aliveOpp = oppTeam.filter(o => o.hp > 0);
+      if (aliveOpp.length === 0) break;
+
+      if (unit.p.job === 'ヒーラー') {
+        const injured = myTeam.filter(m => m.hp > 0 && m.hp < m.maxHp).sort((a,b)=>(a.hp/a.maxHp)-(b.hp/b.maxHp));
+        // MPが35以上ある時だけ回復魔法を使用。MP不足時は通常攻撃へ移行する。
+        if (injured.length > 0 && unit.mp >= TEAM_HEAL_MP_COST) {
+          const primaryId = isTeam1 ? primaryHealer1 : primaryHealer2;
+          const healerCount = myTeam.filter(m => m.p.job === 'ヒーラー').length;
+          const healerEfficiency = (healerCount >= 2 && unit.p.id !== primaryId) ? 0.35 : 0.80;
+          const healVal = Math.floor((unit.p.tec * 1.2 + unit.p.int * 1.5) * healerEfficiency);
+          unit.mp = Math.max(0, unit.mp - TEAM_HEAL_MP_COST);
+          const hpBeforeHeal = injured[0].hp;
+          injured[0].hp = Math.min(injured[0].maxHp, injured[0].hp + healVal);
+          const actualHeal = Math.max(0, injured[0].hp - hpBeforeHeal);
+          if (actualHeal > 0) recordStat(unit.p, 'team', 'heal', actualHeal);
+          logCombat(`${unit.p.name}の回復魔法！ ${injured[0].p.name}のHPが ${actualHeal} 回復（MP ${unit.mp}/${TEAM_HEALER_MAX_MP}）`, "heal");
+          continue;
+        }
+      }
+
+      aliveOpp.sort((a,b) => unit.p.int > 50 ? (a.hp - b.hp) : (Math.random() - 0.5));
+      let target = aliveOpp[0];
+      const originalTarget = target;
+      let guardActivated = false;
+
+      const knight = oppTeam.find(o => o.hp > 0 && o.p.job === 'ナイト' && o !== target);
+      if (knight && Math.random() < 0.4) {
+        logCombat(`${knight.p.name}が ${target.p.name} の盾となって割って入った！`);
+        target = knight;
+        guardActivated = true;
+        recordStat(knight.p, 'team', 'blk', 1); // 旧BLK互換
+        recordStat(knight.p, 'team', 'guard', 1);
+      }
+
+      let mult = (unit.p.job === 'アサシン' && Math.random() < 0.3) ? 2.0 : 1.2;
+      const calculatedDmg = Math.max(8, Math.floor((unit.p.pow * mult) - (target.p.def * 0.4)));
+
+      // PREV: GUARDで元の対象より実ダメージが軽減された分のみ計上。
+      // 通常DEFによる基礎軽減や回避はPREVへ含めない。
+      if (guardActivated && originalTarget !== target) {
+        const originalTargetDmg = Math.max(8, Math.floor((unit.p.pow * mult) - (originalTarget.p.def * 0.4)));
+        const prevented = Math.max(0, originalTargetDmg - calculatedDmg);
+        if (prevented > 0) recordStat(target.p, 'team', 'prev', prevented);
+      }
+
+      // 実DMGのみを記録。残HPを超えるオーバーキル分はDMG/ELIM貢献に含めない。
+      const hpBeforeHit = Math.max(0, target.hp);
+      const actualDmg = Math.min(calculatedDmg, hpBeforeHit);
+      target.hp -= calculatedDmg;
+      
+      // 累積ダメージ記録（ELIM / ASSIST判定用）
+      const curDmg = target.damageByAttacker.get(unit.p.id) || 0;
+      target.damageByAttacker.set(unit.p.id, curDmg + actualDmg);
+      target.lastDamagerId = unit.p.id;
+
+      if (isTeam1) totalDmg1 += actualDmg;
+      else totalDmg2 += actualDmg;
+
+      recordStat(unit.p, 'team', 'dmg', actualDmg);
+      updateMaxHit(unit.p, 'team', actualDmg);
+
+      logCombat(`${unit.p.name}の攻撃 → ${target.p.name}へ ${actualDmg} ダメージ`);
+
+      if (target.hp <= 0) {
+        logCombat(`${target.p.name} は倒れた！`, "kill");
+        recordStat(unit.p, 'team', 'kill', 1);
+
+        // ELIM判定：撃破対象への累積DMG最大貢献者1名へ付与。
+        // 同率なら最後にダメージを与えた該当者を優先し、それでも決まらなければランダム。
+        let elimCandidates = [];
+        let maxContribution = -1;
+        target.damageByAttacker.forEach((dmgVal, attackerId) => {
+          if (dmgVal > maxContribution) {
+            maxContribution = dmgVal;
+            elimCandidates = [attackerId];
+          } else if (dmgVal === maxContribution) {
+            elimCandidates.push(attackerId);
+          }
+        });
+        let awardedElimPlayerId = null;
+        if (elimCandidates.length > 0) {
+          awardedElimPlayerId = elimCandidates.includes(target.lastDamagerId)
+            ? target.lastDamagerId
+            : elimCandidates[Math.floor(Math.random() * elimCandidates.length)];
+          const elimPlayer = players.find(p => p.id === awardedElimPlayerId);
+          if (elimPlayer) recordStat(elimPlayer, 'team', 'elim', 1);
+        }
+
+        // ASSIST判定：
+        // KILL本人とELIM獲得者を除外し、その次に大きくダメージ貢献した味方1名だけを対象とする。
+        // さらに撃破対象が実際に受けた総DMGの15%以上を与えていることを条件とする。
+        // これにより ELIM=ASSIST の重複を抑え、ASSISTを「第2・第3の有意な撃破貢献」として独立させる。
+        const killPlayerId = unit.p.id;
+        const elimPlayerIdForAssist = awardedElimPlayerId;
+
+        const totalContribution = Array.from(target.damageByAttacker.values())
+          .reduce((sum, val) => sum + val, 0);
+        const assistThreshold = totalContribution * 0.15;
+
+        let maxAssistDmg = 0;
+        let assistCandidates = [];
+
+        target.damageByAttacker.forEach((dmgVal, attackerId) => {
+          if (
+            attackerId !== killPlayerId &&
+            attackerId !== elimPlayerIdForAssist &&
+            dmgVal >= assistThreshold &&
+            dmgVal > 0
+          ) {
+            if (dmgVal > maxAssistDmg) {
+              maxAssistDmg = dmgVal;
+              assistCandidates = [attackerId];
+            } else if (dmgVal === maxAssistDmg) {
+              assistCandidates.push(attackerId);
+            }
+          }
+        });
+
+        if (assistCandidates.length > 0) {
+          const topAssistantId = assistCandidates[Math.floor(Math.random() * assistCandidates.length)];
+          const assistant = players.find(p => p.id === topAssistantId);
+          if (assistant) recordStat(assistant, 'team', 'assist', 1);
+        }
+      }
+    }
+
+    // V31.9: 0ヒーラー編成の「応急回復」は1.5%のまま維持。
+    // ヒーラー不在チームだけ、各ラウンド終了時に生存者が最大HPの1.5%を自然回復する。
+    // HEAL個人成績には加算しない。1ヒーラー以上の編成には一切適用しない。
+    const applyEmergencyRecovery = (state, roster) => {
+      if (roster.some(p => p.job === 'ヒーラー')) return;
+      for (const member of state) {
+        if (member.hp <= 0 || member.hp >= member.maxHp) continue;
+        const recover = Math.max(1, Math.floor(member.maxHp * 0.015));
+        member.hp = Math.min(member.maxHp, member.hp + recover);
+      }
+    };
+    applyEmergencyRecovery(state1, roster1);
+    applyEmergencyRecovery(state2, roster2);
+
+    turn++;
+  }
+
+  const alive1 = state1.filter(s=>s.hp>0).length;
+  const alive2 = state2.filter(s=>s.hp>0).length;
+
+  roster1.forEach(p => recordStat(p, 'team', 'm', 1));
+  roster2.forEach(p => recordStat(p, 'team', 'm', 1));
+
+  let winner = null;
+  let winType = 'elimination';
+  let decisionReasonLog = '';
+
+  if (alive1 === 0 || alive2 === 0) {
+    winType = 'elimination';
+    if (alive1 > 0) winner = 1;
+    else if (alive2 > 0) winner = 2;
+    else winner = 0;
+  } else {
+    winType = 'decision';
+    logCombat(`【${TEAM_BATTLE_MAX_TURNS}ターン終了 - 審判判定】`, "highlight");
+
+    if (alive1 !== alive2) {
+      winner = alive1 > alive2 ? 1 : 2;
+      decisionReasonLog = `生存人数: ${t1.name} ${alive1}名 - ${alive2}名 ${t2.name}`;
+    } else {
+      const maxHpSum1 = state1.reduce((sum, s) => sum + s.maxHp, 0);
+      const curHpSum1 = state1.reduce((sum, s) => sum + Math.max(0, s.hp), 0);
+      const hpRatio1 = curHpSum1 / maxHpSum1;
+
+      const maxHpSum2 = state2.reduce((sum, s) => sum + s.maxHp, 0);
+      const curHpSum2 = state2.reduce((sum, s) => sum + Math.max(0, s.hp), 0);
+      const hpRatio2 = curHpSum2 / maxHpSum2;
+
+      const hpPct1Str = (hpRatio1 * 100).toFixed(1);
+      const hpPct2Str = (hpRatio2 * 100).toFixed(1);
+
+      if (Math.abs(hpRatio1 - hpRatio2) > 0.0001) {
+        winner = hpRatio1 > hpRatio2 ? 1 : 2;
+        decisionReasonLog = `生存人数同数 (${alive1}-${alive2}) / 残存HP率: ${t1.name} ${hpPct1Str}% - ${hpPct2Str}% ${t2.name}`;
+      } else {
+        if (totalDmg1 !== totalDmg2) {
+          winner = totalDmg1 > totalDmg2 ? 1 : 2;
+          decisionReasonLog = `生存人数・残存HP率同等 / 総与DMG: ${t1.name} ${totalDmg1} - ${totalDmg2} ${t2.name}`;
+        } else {
+          winner = 0;
+          winType = 'draw';
+          decisionReasonLog = `生存人数(${alive1}名)・残存HP率(${hpPct1Str}%)・総与DMG(${totalDmg1})が完全同数`;
+        }
+      }
+    }
+  }
+
+  if (winner === 1) {
+    t1.teamWins++; t2.teamLosses++;
+    roster1.forEach(p => recordStat(p, 'team', 'w', 1));
+    roster2.forEach(p => recordStat(p, 'team', 'l', 1));
+    if (decisionReasonLog) logCombat(decisionReasonLog);
+    logCombat(`【試合終了】${t1.name} の${winType === 'decision' ? '判定' : ''}勝利！`, "highlight");
+  } else if (winner === 2) {
+    t2.teamWins++; t1.teamLosses++;
+    roster2.forEach(p => recordStat(p, 'team', 'w', 1));
+    roster1.forEach(p => recordStat(p, 'team', 'l', 1));
+    if (decisionReasonLog) logCombat(decisionReasonLog);
+    logCombat(`【試合終了】${t2.name} の${winType === 'decision' ? '判定' : ''}勝利！`, "highlight");
+  } else {
+    t1.teamDraws++; t2.teamDraws++;
+    roster1.forEach(p => recordStat(p, 'team', 'd', 1));
+    roster2.forEach(p => recordStat(p, 'team', 'd', 1));
+    if (decisionReasonLog) logCombat(decisionReasonLog);
+    logCombat(`【試合終了】引き分け！`, "highlight");
+  }
+
+  // BEST DMG: この1試合での総DMG自己最高値を更新
+  [...roster1, ...roster2].forEach(p => {
+    const start = matchStartDmg.get(p.id) || 0;
+    const matchDmg = p.seasonStats.team.dmg - start;
+    updateBestDmg(p, 'team', matchDmg);
+  });
+}
+
+function ensureStatShape(p) {
+  ['team', 'solo'].forEach(mode => {
+    if (!p.seasonStats) p.seasonStats = {};
+    if (!p.careerStats) p.careerStats = {};
+    if (!p.seasonStats[mode]) p.seasonStats[mode] = resetStatObj();
+    if (!p.careerStats[mode]) p.careerStats[mode] = resetStatObj();
+    const defaults = resetStatObj();
+    Object.keys(defaults).forEach(k => {
+      if (typeof p.seasonStats[mode][k] !== 'number') p.seasonStats[mode][k] = defaults[k];
+      if (typeof p.careerStats[mode][k] !== 'number') p.careerStats[mode][k] = defaults[k];
+    });
+  });
+  if (!p.titles) p.titles = { individualChampion: 0, teamChampion: 0, elimLeader: 0, dmgLeader: 0, prevLeader: 0, healLeader: 0 };
+  ['individualChampion','teamChampion','elimLeader','dmgLeader','prevLeader','healLeader'].forEach(k => {
+    if (typeof p.titles[k] !== 'number') p.titles[k] = 0;
+  });
+  if (!p.achievements) p.achievements = {};
+  if (!p.careerHistory) p.careerHistory = [];
+  if (!p.developmentType) p.developmentType = 'STANDARD';
+}
+
+function recordStat(p, mode, key, val) {
+  ensureStatShape(p);
+  if (typeof p.seasonStats[mode][key] !== 'number') p.seasonStats[mode][key] = 0;
+  if (typeof p.careerStats[mode][key] !== 'number') p.careerStats[mode][key] = 0;
+  p.seasonStats[mode][key] += val;
+  p.careerStats[mode][key] += val;
+}
+
+function updateMaxHit(p, mode, dmg) {
+  ensureStatShape(p);
+  p.seasonStats[mode].maxDmg = Math.max(p.seasonStats[mode].maxDmg || 0, dmg);
+  p.careerStats[mode].maxDmg = Math.max(p.careerStats[mode].maxDmg || 0, dmg);
+}
+
+function updateBestDmg(p, mode, matchDmg) {
+  ensureStatShape(p);
+  p.seasonStats[mode].bestDmg = Math.max(p.seasonStats[mode].bestDmg || 0, matchDmg);
+  p.careerStats[mode].bestDmg = Math.max(p.careerStats[mode].bestDmg || 0, matchDmg);
+}
+
+function logCombat(msg, type = '') {
+  if (fastSimulationMode) return;
+  const box = document.getElementById('combatLog');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = `log-line ${type}`;
+  div.textContent = msg;
+  box.appendChild(div);
+  // 長期プレイでDOMが肥大化しないよう直近300行のみ保持
+  while (box.children.length > 300) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ==========================================
+// INDIVIDUAL CHAMPIONSHIP TOURNAMENT ENGINE
+// ==========================================
+function startTournamentPhase() {
+  seasonPhase = 'TOURNAMENT_SELECT';
+  tournamentState.userSelectedIds.clear();
+  switchTab('tournament');
+  renderTournamentSelectionTable();
+}
+
+function renderTournamentSelectionTable() {
+  const myTeam = teams.find(t => t.isPlayer);
+  const myPlayers = players.filter(p => p.teamId === myTeam.id && p.active);
+
+  document.getElementById('tourneySelectionCard').style.display = 'block';
+  document.getElementById('tourneyMainCard').style.display = 'none';
+
+  let html = '';
+  myPlayers.forEach(p => {
+    const checked = tournamentState.userSelectedIds.has(p.id) ? 'checked' : '';
+    html += `<tr>
+      <td><input type="checkbox" ${checked} onchange="toggleTourneyPlayerSelect('${p.id}')"></td>
+      <td style="color:var(--accent-blue);cursor:pointer;" onclick="openPlayerModal('${p.id}')">${p.name}</td>
+      <td>${p.age}</td><td>${p.race}</td><td>${p.job}</td>
+      <td class="ovr-tag">${p.ovr}</td>
+      <td>${formatMoney(p.salary)}</td>
+      <td><span class="badge badge-pot-${p.potential}">${p.potential}</span></td>
+      <td>${p.pow}</td><td>${p.def}</td><td>${p.sta}</td><td>${p.spd}</td><td>${p.tec}</td><td>${p.int}</td>
+    </tr>`;
+  });
+  document.getElementById('tourneySelectionBody').innerHTML = html;
+}
+
+function toggleTourneyPlayerSelect(pId) {
+  if (tournamentState.userSelectedIds.has(pId)) {
+    tournamentState.userSelectedIds.delete(pId);
+  } else {
+    if (tournamentState.userSelectedIds.size >= 4) {
+      alert("個人選手権の代表選手は4名まで選択可能です。");
+      renderTournamentSelectionTable();
+      return;
+    }
+    tournamentState.userSelectedIds.add(pId);
+  }
+  renderTournamentSelectionTable();
+}
+
+function autoSelectUserTourneyRoster() {
+  const myTeam = teams.find(t => t.isPlayer);
+  const myPlayers = players.filter(p => p.teamId === myTeam.id && p.active).sort((a,b) => b.ovr - a.ovr);
+  
+  tournamentState.userSelectedIds.clear();
+  myPlayers.slice(0, 4).forEach(p => tournamentState.userSelectedIds.add(p.id));
+  renderTournamentSelectionTable();
+}
+
+function confirmTourneyRoster() {
+  const myTeam = teams.find(t => t.isPlayer);
+  const myPlayers = players.filter(p => p.teamId === myTeam.id && p.active);
+
+  if (myPlayers.length >= 4 && tournamentState.userSelectedIds.size < 4) {
+    alert("代表選手を4名選出してください（AUTO選出も利用可能です）。");
+    return;
+  }
+
+  // 選出確定 & 全クラブ代表集計
+  const selectedParticipants = [];
+
+  teams.forEach(t => {
+    const clubActiveP = players.filter(p => p.teamId === t.id && p.active);
+    if (t.isPlayer) {
+      if (clubActiveP.length < 4) {
+        clubActiveP.forEach(p => selectedParticipants.push(p));
+      } else {
+        clubActiveP.filter(p => tournamentState.userSelectedIds.has(p.id)).forEach(p => selectedParticipants.push(p));
+      }
+    } else {
+      // CPU選出：OVR順上位4名（所属4未満なら全選出）
+      const sorted = [...clubActiveP].sort((a,b) => b.ovr - a.ovr);
+      sorted.slice(0, 4).forEach(p => selectedParticipants.push(p));
+    }
+  });
+
+  setupTournament(selectedParticipants);
+}
+
+function setupTournament(participantList) {
+  seasonPhase = 'TOURNAMENT_PLAY';
+
+  // 毎シーズン大会操作ボタンを必ず初期化する
+  if (!balanceTestMode) {
+    document.getElementById('btnNextTourneyRound').disabled = false;
+    document.getElementById('btnAutoTourney').disabled = false;
+    document.getElementById('btnFinishTourney').style.display = 'none';
+  }
+
+  participantList.forEach(p => {
+    p.tourneyAppearances = (p.tourneyAppearances || 0) + 1;
+  });
+
+  tournamentState.participants = [...participantList];
+  tournamentState.champion = null;
+  tournamentState.summary = null;
+
+  // トーナメント枠生成（完全ランダムシャッフル）
+  let shuffled = [...participantList].sort(() => Math.random() - 0.5);
+  
+  // 人数が2の累乗でなければBYE挿入
+  let targetSize = 2;
+  while (targetSize < shuffled.length) targetSize *= 2;
+  
+  while (shuffled.length < targetSize) {
+    shuffled.push(null); // BYE
+  }
+
+  // ラウンド構造初期化
+  tournamentState.rounds = [];
+  let roundParticipants = shuffled;
+  let stageCount = targetSize;
+
+  while (stageCount >= 2) {
+    let name = `ROUND OF ${stageCount}`;
+    if (stageCount === 8) name = 'QUARTER FINAL';
+    if (stageCount === 4) name = 'SEMI FINAL';
+    if (stageCount === 2) name = 'FINAL';
+
+    tournamentState.rounds.push({
+      name: name,
+      stageSize: stageCount,
+      matches: [],
+      completed: false
+    });
+    stageCount /= 2;
+  }
+
+  // 1回戦の対戦カード作成
+  const firstRoundMatches = [];
+  for (let i = 0; i < roundParticipants.length; i += 2) {
+    const p1 = roundParticipants[i];
+    const p2 = roundParticipants[i+1];
+
+    if (p1 && !p2) {
+      firstRoundMatches.push({ p1, p2: null, winner: p1, loser: null, isBye: true, played: true });
+    } else if (!p1 && p2) {
+      firstRoundMatches.push({ p1: null, p2, winner: p2, loser: null, isBye: true, played: true });
+    } else {
+      firstRoundMatches.push({ p1, p2, winner: null, loser: null, isBye: false, played: false });
+    }
+  }
+
+  tournamentState.rounds[0].matches = firstRoundMatches;
+  tournamentState.currentRoundIndex = 0;
+
+  // 1回戦でBYEのみの試合があれば完了チェック
+  if (firstRoundMatches.every(m => m.played)) {
+    advanceTournamentRound();
+  }
+
+  if (!balanceTestMode) {
+    document.getElementById('tourneySelectionCard').style.display = 'none';
+    document.getElementById('tourneyMainCard').style.display = 'block';
+    updateTourneyRoundDropdown();
+    renderTournamentView();
+  }
+}
+
+function updateTourneyRoundDropdown() {
+  const sel = document.getElementById('tourneyRoundSelect');
+  sel.innerHTML = '';
+  tournamentState.rounds.forEach((r, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = r.name;
+    sel.appendChild(opt);
+  });
+  sel.value = tournamentState.currentRoundIndex;
+}
+
+function renderTournamentView() {
+  const selVal = parseInt(document.getElementById('tourneyRoundSelect').value) || 0;
+  const round = tournamentState.rounds[selVal];
+  const container = document.getElementById('tourneyMatchesContainer');
+
+  if (!round) return;
+
+  const isHighlighted = round.stageSize <= 16;
+  let html = `<div style="margin-bottom:10px; font-weight:bold; color:${isHighlighted ? 'var(--accent-gold)' : 'var(--accent-blue)'};">${round.name} Matches</div>`;
+
+  round.matches.forEach((m, idx) => {
+    const t1 = m.p1 ? teams.find(x => x.id === m.p1.teamId) : null;
+    const t2 = m.p2 ? teams.find(x => x.id === m.p2.teamId) : null;
+
+    html += `
+      <div class="tournament-card ${isHighlighted ? 'highlight-stage' : ''}">
+        <div style="font-size:0.75rem; color:var(--text-sub);">MATCH ${idx + 1}</div>
+        <div class="match-vs-container">
+          <div class="match-player ${m.winner && m.p1 && m.winner.id === m.p1.id ? 'winner' : ''}">
+            ${m.p1 ? `<strong>${m.p1.name}</strong><br><span style="font-size:0.75rem; color:var(--text-sub);">${t1 ? t1.name : ''} / ${m.p1.age}歳 / ${m.p1.job} / OVR${m.p1.ovr}</span>` : 'BYE'}
+          </div>
+          <div class="match-vs">VS</div>
+          <div class="match-player ${m.winner && m.p2 && m.winner.id === m.p2.id ? 'winner' : ''}">
+            ${m.p2 ? `<strong>${m.p2.name}</strong><br><span style="font-size:0.75rem; color:var(--text-sub);">${t2 ? t2.name : ''} / ${m.p2.age}歳 / ${m.p2.job} / OVR${m.p2.ovr}</span>` : 'BYE'}
+          </div>
+        </div>
+        ${m.winner ? `<div style="text-align:right; font-size:0.8rem; font-weight:bold; color:var(--win-color);">WINNER: ${m.winner.name}</div>` : '<div style="text-align:right; font-size:0.8rem; color:var(--text-sub);">未試合</div>'}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function runNextTourneyRound(skipRender = false, silentFinalize = false) {
+  const currentRound = tournamentState.rounds[tournamentState.currentRoundIndex];
+  if (!currentRound || currentRound.completed) return;
+
+  // 現在のラウンド全試合を実行
+  currentRound.matches.forEach(m => {
+    if (!m.played) {
+      const res = simulateTournamentMatch(m.p1, m.p2);
+      m.winner = res.winner;
+      m.loser = res.loser;
+      m.played = true;
+
+      // 成績ステージタグ保存
+      if (currentRound.stageSize === 8) m.loser.lastTourneyResult = 'BEST 8';
+      if (currentRound.stageSize === 4) m.loser.lastTourneyResult = 'BEST 4';
+      if (currentRound.stageSize === 2) {
+        m.loser.lastTourneyResult = 'Runner-up';
+        m.winner.lastTourneyResult = 'Champion';
+      }
+    }
+  });
+
+  currentRound.completed = true;
+
+  if (tournamentState.currentRoundIndex < tournamentState.rounds.length - 1) {
+    advanceTournamentRound();
+  } else {
+    // 決勝完了
+    const finalMatch = currentRound.matches[0];
+    tournamentState.champion = finalMatch.winner;
+    finalizeTournament(silentFinalize);
+  }
+
+  if (!skipRender) renderTournamentView();
+}
+
+function advanceTournamentRound() {
+  const currentRound = tournamentState.rounds[tournamentState.currentRoundIndex];
+  const nextRoundIndex = tournamentState.currentRoundIndex + 1;
+  const nextRound = tournamentState.rounds[nextRoundIndex];
+
+  const winners = currentRound.matches.map(m => m.winner);
+  const nextMatches = [];
+
+  for (let i = 0; i < winners.length; i += 2) {
+    const p1 = winners[i];
+    const p2 = winners[i+1];
+    nextMatches.push({ p1, p2, winner: null, loser: null, isBye: false, played: false });
+  }
+
+  nextRound.matches = nextMatches;
+  tournamentState.currentRoundIndex = nextRoundIndex;
+  document.getElementById('tourneyRoundSelect').value = nextRoundIndex;
+  updateTourneyRoundDropdown();
+}
+
+function autoPlayTournament() {
+  const started = performance.now();
+  fastSimulationMode = true;
+  try {
+    while (tournamentState.currentRoundIndex < tournamentState.rounds.length && !tournamentState.rounds[tournamentState.rounds.length - 1].completed) {
+      runNextTourneyRound(true, true);
+    }
+  } finally {
+    fastSimulationMode = false;
+  }
+  updateTourneyRoundDropdown();
+  renderTournamentView();
+  saveGameState(false);
+  const champ = tournamentState.champion;
+  if (champ) alert(`【大会終了】第${currentSeason}期 個人闘技選手権 王者は ${champ.name} に決定しました！\n高速AUTO: ${(performance.now()-started).toFixed(0)}ms`);
+}
+
+function finalizeTournament(silent = false) {
+  const champ = tournamentState.champion;
+  if (!champ) return;
+
+  const t = teams.find(x => x.id === champ.teamId);
+
+  // 同一Seasonの王者確定処理は1回だけ。二重クリック/復元後の再実行でも重複登録しない。
+  const alreadyRecorded = championshipHistory.some(h => h.season === currentSeason);
+  if (!alreadyRecorded) {
+    champ.titles.individualChampion = (champ.titles.individualChampion || 0) + 1;
+    champ.careerHistory.push(`${champ.age}歳 第${currentSeason}期 個人闘技選手権 優勝`);
+    championshipHistory.push({
+      season: currentSeason,
+      championName: champ.name,
+      age: champ.age,
+      job: champ.job,
+      ovr: champ.ovr,
+      clubName: t ? t.name : '-'
+    });
+  }
+
+  const totalMatches = tournamentState.rounds.reduce((s, r) => s + r.matches.filter(m => !m.isBye).length, 0);
+
+  tournamentState.summary = {
+    participants: tournamentState.participants.length,
+    matches: totalMatches,
+    champion: champ,
+    championSnapshot: { id: champ.id, name: champ.name, age: champ.age, job: champ.job, ovr: champ.ovr, clubName: t ? t.name : '-' },
+    clubName: t ? t.name : '-',
+    season: currentSeason,
+    koWins: totalMatches,
+    decisionWins: 0
+  };
+
+  if (!balanceTestMode) {
+    document.getElementById('btnNextTourneyRound').disabled = true;
+    document.getElementById('btnAutoTourney').disabled = true;
+    document.getElementById('btnFinishTourney').style.display = 'inline-block';
+  }
+
+  if (!silent) alert(`【大会終了】第${currentSeason}期 個人闘技選手権 王者は ${champ.name} (${t ? t.name : ''}) に決定しました！`);
+}
+
+function finishTournamentAndProceed() {
+  document.getElementById('btnStartTourney').style.display = 'none';
+  document.getElementById('tourneyTabBtn').style.display = 'none';
+  processSeasonEnd();
+}
+
+// ==========================================
+// SEASON STAT AWARDS & LEAGUE RECORDS
+// ==========================================
+function processSeasonStatAwards() {
+  const activeP = players.filter(p => p.active);
+  activeP.forEach(ensureStatShape);
+  if (activeP.length === 0) return;
+
+  const avgDmg = p => p.seasonStats.team.m > 0 ? p.seasonStats.team.dmg / p.seasonStats.team.m : 0;
+  const pickOne = (compareFn) => [...activeP].sort(compareFn)[0];
+
+  const elimLeader = pickOne((a,b) =>
+    b.seasonStats.team.elim - a.seasonStats.team.elim ||
+    avgDmg(b) - avgDmg(a) ||
+    b.seasonStats.team.dmg - a.seasonStats.team.dmg
+  );
+  if (elimLeader && elimLeader.seasonStats.team.elim > 0) {
+    elimLeader.titles.elimLeader++;
+    elimLeader.careerHistory.push(`${elimLeader.age}歳 第${currentSeason}期 撃破王 (ELIM ${elimLeader.seasonStats.team.elim})`);
+  }
+
+  const dmgLeader = pickOne((a,b) => b.seasonStats.team.dmg - a.seasonStats.team.dmg);
+  if (dmgLeader && dmgLeader.seasonStats.team.dmg > 0) {
+    dmgLeader.titles.dmgLeader++;
+    dmgLeader.careerHistory.push(`${dmgLeader.age}歳 第${currentSeason}期 DMG王 (${dmgLeader.seasonStats.team.dmg})`);
+  }
+
+  const prevLeader = pickOne((a,b) =>
+    b.seasonStats.team.prev - a.seasonStats.team.prev ||
+    b.seasonStats.team.guard - a.seasonStats.team.guard ||
+    b.ovr - a.ovr
+  );
+  if (prevLeader && prevLeader.seasonStats.team.prev > 0) {
+    prevLeader.titles.prevLeader++;
+    prevLeader.careerHistory.push(`${prevLeader.age}歳 第${currentSeason}期 守護王 (PREV ${prevLeader.seasonStats.team.prev})`);
+  }
+
+  const healLeader = pickOne((a,b) => b.seasonStats.team.heal - a.seasonStats.team.heal);
+  if (healLeader && healLeader.seasonStats.team.heal > 0) {
+    healLeader.titles.healLeader++;
+    healLeader.careerHistory.push(`${healLeader.age}歳 第${currentSeason}期 回復王 (HEAL ${healLeader.seasonStats.team.heal})`);
+  }
+
+  // ELIMキャリアマイルストーン（重複防止）
+  activeP.forEach(p => {
+    [50, 100].forEach(mark => {
+      const key = `career_elim_${mark}`;
+      if (p.careerStats.team.elim >= mark && !p.achievements[key]) {
+        p.achievements[key] = true;
+        p.careerHistory.push(`${p.age}歳 通算${mark} ELIM達成`);
+      }
+    });
+  });
+
+  updateLeagueRecords();
+}
+
+function updateLeagueRecords() {
+  const allP = players; // 引退者もplayers内に保持される現行構造
+  allP.forEach(ensureStatShape);
+  const activeP = allP.filter(p => p.active);
+  if (allP.length === 0) return;
+
+  const maxBy = (list, getter) => list.length ? [...list].sort((a,b)=>getter(b)-getter(a))[0] : null;
+  const setCareer = (key, player, getter) => {
+    if (!player) return;
+    const value = getter(player);
+    if (value > (leagueRecords[key]?.value || 0)) leagueRecords[key] = { playerId: player.id, value };
+  };
+  const setSeason = (key, player, getter) => {
+    if (!player) return;
+    const value = getter(player);
+    if (value > (leagueRecords[key]?.value || 0)) leagueRecords[key] = { playerId: player.id, value, season: currentSeason };
+  };
+
+  setCareer('careerElim', maxBy(allP,p=>p.careerStats.team.elim), p=>p.careerStats.team.elim);
+  setCareer('careerPrev', maxBy(allP,p=>p.careerStats.team.prev), p=>p.careerStats.team.prev);
+  setCareer('careerGuard', maxBy(allP,p=>p.careerStats.team.guard), p=>p.careerStats.team.guard);
+  setCareer('careerEva', maxBy(allP,p=>p.careerStats.team.eva), p=>p.careerStats.team.eva);
+  setCareer('careerHeal', maxBy(allP,p=>p.careerStats.team.heal), p=>p.careerStats.team.heal);
+
+  setSeason('seasonElim', maxBy(activeP,p=>p.seasonStats.team.elim), p=>p.seasonStats.team.elim);
+  setSeason('seasonPrev', maxBy(activeP,p=>p.seasonStats.team.prev), p=>p.seasonStats.team.prev);
+  setSeason('seasonGuard', maxBy(activeP,p=>p.seasonStats.team.guard), p=>p.seasonStats.team.guard);
+  setSeason('seasonHeal', maxBy(activeP,p=>p.seasonStats.team.heal), p=>p.seasonStats.team.heal);
+  setSeason('seasonDmg', maxBy(activeP,p=>p.seasonStats.team.dmg), p=>p.seasonStats.team.dmg);
+
+  const elimTitleTop = maxBy(allP,p=>p.titles.elimLeader || 0);
+  if (elimTitleTop) leagueRecords.elimLeaderTitles = { playerId: elimTitleTop.id, value: elimTitleTop.titles.elimLeader || 0 };
+  const prevTitleTop = maxBy(allP,p=>p.titles.prevLeader || 0);
+  if (prevTitleTop) leagueRecords.prevLeaderTitles = { playerId: prevTitleTop.id, value: prevTitleTop.titles.prevLeader || 0 };
+}
+
+// ==========================================
+// TEAM CHAMPION CAREER RECORD
+// ==========================================
+function processTeamChampionTitle() {
+  const standings = calculateTeamStandings();
+  if (!standings.length) return;
+
+  const championTeam = teams.find(t => t.id === standings[0].teamId);
+  if (!championTeam) return;
+
+  const seasonKey = `team_champion_S${currentSeason}`;
+  players.filter(p => p.active && p.teamId === championTeam.id).forEach(p => {
+    ensureStatShape(p);
+    if (p.achievements[seasonKey]) return;
+    p.achievements[seasonKey] = true;
+    p.titles.teamChampion = (p.titles.teamChampion || 0) + 1;
+    p.careerHistory.push(`${p.age}歳 第${currentSeason}期 団体リーグ優勝 (${championTeam.name})`);
+  });
+}
+
+// ==========================================
+// DRAFT, GROWTH, DECAY & RETIREMENT ENGINE
+// ==========================================
+function processSeasonEnd() {
+  seasonPhase = 'DRAFT';
+  lastSeasonStandings = calculateTeamStandings();
+  retiredCountThisSeason = 0;
+  releasedCountThisSeason = 0;
+
+  // V31.6: REPORT用に「実際にこのシーズンを戦ったロスター/スタメン」を成長・ドラフト前に固定保存。
+  // これにより、オフシーズンの成長・引退・ドラフト後に別の5人を再選出して表示するズレを防ぐ。
+  teams.forEach(team => {
+    const seasonRoster = players.filter(p => p.active && p.teamId === team.id);
+    const seasonFive = getLegalStartingFive(team, true);
+    team.seasonReportSeason = currentSeason;
+    team.seasonReportStartingFiveIds = seasonFive.map(p => p.id);
+    team.seasonReportRosterAvg = seasonRoster.length ? seasonRoster.reduce((sum,p)=>sum+p.ovr,0) / seasonRoster.length : 0;
+  });
+
+  // 団体リーグ優勝・個人タイトル・歴代記録を確定（Season Statsリセット前）
+  processTeamChampionTitle();
+  processSeasonStatAwards();
+
+  // V32.0: 今季の収入と年俸支出を確定。現段階では財政は可視化のみで、戦力AIにはまだ影響させない。
+  settleSeasonFinances();
+
+  // シーズン終了時の成長・加齢・引退判定処理
+  players.forEach(p => {
+    // 引退済み選手の年齢・能力・引退時OVRは永久保存する
+    if (!p.active) return;
+
+    // V31.2: シーズンレポート用に「試合終了時点」の年齢・OVRを保存。
+    // DRAFT中のCOPY REPORT / COPY STATSはこの値を使い、加齢後の数値と混在させない。
+    p.seasonReportAge = p.age;
+    p.seasonReportOvr = p.ovr;
+
+    p.age += 1;
+    p.seasonStartOvr = p.ovr;
+
+    const potMult = { 'S': 1.85, 'A': 1.38, 'B': 1.00, 'C': 0.72, 'D': 0.45 }[p.truePotential] || 0.85;
+    const dev = getDevelopmentConfig(p.developmentType || 'STANDARD');
+    const effectiveAge = p.age + dev.ageOffset;
+    const ovrGrowthMult = getOvrGrowthMultiplier(p.ovr);
+    const stats = ['pow','def','sta','spd','tec','int'];
+
+    const growAll = (minRaw, maxRaw, extraMult = 1.0) => {
+      stats.forEach(s => {
+        const raw = minRaw + Math.random() * (maxRaw - minRaw);
+        const baseDelta = Math.floor(raw * potMult);
+        const delta = scaledPositiveDelta(baseDelta, ovrGrowthMult * extraMult);
+        p[s] = Math.min(OVR_MAX, p[s] + delta);
+      });
+    };
+
+    if (effectiveAge <= 21) {
+      // 成長期。早熟は若年期に強く、晩成系はピークを後ろへずらす。
+      growAll(1, 5, dev.youngGrowth);
+    } else if (effectiveAge <= 25) {
+      // 最大成長期
+      growAll(1, 4, dev.youngGrowth);
+    } else if (effectiveAge <= 29) {
+      // 成熟期。高OVRほど伸びにくく、基本は微成長。
+      stats.forEach(s => {
+        if (Math.random() < 0.48) {
+          const baseDelta = Math.floor((Math.random() * 1.8) * potMult);
+          p[s] = Math.min(OVR_MAX, p[s] + scaledPositiveDelta(baseDelta, ovrGrowthMult));
+        }
+      });
+    } else if (effectiveAge <= 31) {
+      // 成長ほぼ停止。技術・知力のみごく稀に伸びる。
+      ['tec','int'].forEach(s => {
+        if (Math.random() < 0.18) p[s] = Math.min(OVR_MAX, p[s] + scaledPositiveDelta(1, ovrGrowthMult));
+      });
+    } else {
+      // 32歳以降は衰退。高OVRでも衰退自体は免除しない。
+      let decayChance, minDecay, maxDecay;
+      if (effectiveAge <= 34) { decayChance = 0.38; minDecay = 1; maxDecay = 2; }
+      else if (effectiveAge <= 37) { decayChance = 0.68; minDecay = 1; maxDecay = 3; }
+      else { decayChance = 0.90; minDecay = 2; maxDecay = 4; }
+
+      // 魔法職は身体衰退を少しだけ緩和。ただしV26ほど高齢維持を強くしない。
+      const magicPhysicalMult = (p.job === 'メイジ' || p.job === 'ヒーラー') ? 0.90 : 1.00;
+      ['pow','def','sta','spd'].forEach(s => {
+        const chance = decayChance * (s === 'spd' || s === 'sta' ? 1.0 : 0.80) * magicPhysicalMult;
+        if (Math.random() < chance) {
+          const d = minDecay + Math.floor(Math.random() * (maxDecay - minDecay + 1));
+          p[s] = Math.max(s === 'sta' ? 20 : 15, p[s] - d);
+        }
+      });
+
+      // TEC/INTは身体能力より長持ちするが、35歳以降は維持一辺倒にしない。
+      const mentalDecayChance = effectiveAge <= 34 ? 0.10 : (effectiveAge <= 37 ? 0.25 : 0.45);
+      ['tec','int'].forEach(s => {
+        if (Math.random() < mentalDecayChance) p[s] = Math.max(20, p[s] - 1);
+        else if (effectiveAge <= 34 && Math.random() < 0.08) p[s] = Math.min(OVR_MAX, p[s] + scaledPositiveDelta(1, ovrGrowthMult));
+      });
+    }
+
+    capPlayerStats(p);
+
+    const oldOvr = p.ovr;
+    p.ovr = calcOVR(p);
+    p.lastDeltaOvr = p.ovr - p.seasonStartOvr;
+
+    let retireChance = getBaseRetireRate(p.age);
+    
+    if (retireChance > 0) {
+      // 高OVRは少し長く現役を続けやすいが、V26のような大幅減算は行わない。
+      if (p.ovr >= 95) retireChance *= 0.65;
+      else if (p.ovr >= 90) retireChance *= 0.75;
+      else if (p.ovr >= 85) retireChance *= 0.85;
+      else if (p.ovr < 70) retireChance *= 1.15;
+
+      // 魔法職の長寿補正も小さく留める。
+      if (p.job === 'メイジ' || p.job === 'ヒーラー') retireChance *= 0.92;
+
+      // 晩成系はピークが遅いぶん、引退もわずかに遅れやすい。
+      if (p.developmentType === 'LATE') retireChance *= 0.90;
+      if (p.developmentType === 'ULTRA_LATE') retireChance *= 0.80;
+      if (p.developmentType === 'EARLY' && p.age >= 35) retireChance *= 1.10;
+
+      retireChance = Math.max(0.001, Math.min(0.95, retireChance));
+    }
+
+    if (Math.random() < retireChance) {
+      p.retirementPending = true;
+    }
+  });
+
+  generateDraftProspects();
+  initDraftState();
+
+  switchTab('draft');
+  updateUI();
+}
+
+function getBaseRetireRate(age) {
+  if (age <= 31) return 0.0;
+  if (age === 32) return 0.01;
+  if (age === 33) return 0.03;
+  if (age === 34) return 0.05;
+  if (age === 35) return 0.08;
+  if (age === 36) return 0.12;
+  if (age === 37) return 0.17;
+  if (age === 38) return 0.23;
+  if (age === 39) return 0.30;
+  if (age === 40) return 0.38;
+  if (age === 41) return 0.48;
+  if (age === 42) return 0.60;
+  if (age === 43) return 0.70;
+  if (age === 44) return 0.80;
+  return 0.90;
+}
+
+function generateDraftProspects() {
+  const count = 44 + Math.floor(Math.random() * 9); // V31.1: 16チーム×2巡を十分に満たす候補数
+  draftProspects = [];
+
+  const bgs = ['アカデミー卒', '王立学院卒', '地方学院卒', '在野戦士', '冒険者', '元傭兵', '元騎士', '元軍人'];
+  const titles = ['俊英', '守護者', '迷宮踏破者', '切り札', '遅れてきた大器', '最高の才', '怪物'];
+
+  for (let i = 0; i < count; i++) {
+    let age = 18;
+    const rand = Math.random();
+    if (rand < 0.40) age = 18 + Math.floor(Math.random() * 3);
+    else if (rand < 0.70) age = 21 + Math.floor(Math.random() * 4);
+    else if (rand < 0.88) age = 25 + Math.floor(Math.random() * 5);
+    else if (rand < 0.97) age = 30 + Math.floor(Math.random() * 5);
+    else age = 35 + Math.floor(Math.random() * 3);
+
+    let truePot = generatePotentialByAge(age);
+    let baseVal = 43 + Math.floor((age - 18) * 1.15) + Math.floor(Math.random() * 10);
+
+    // V30: 新人は基本的に即90ではなく「育ててスターになる」設計。
+    // ごく少数だけドラフト時点で70台の逸材を混ぜる。
+    const talentRoll = Math.random();
+    if (age <= 24 && talentRoll < 0.012) {
+      baseVal += 18 + Math.floor(Math.random() * 5);
+      truePot = 'S';
+    } else if (age <= 24 && talentRoll < 0.055) {
+      baseVal += 10 + Math.floor(Math.random() * 5);
+      if (truePot !== 'S') truePot = 'A';
+    } else if (age >= 30 && Math.random() < 0.015) {
+      baseVal += 12;
+    }
+
+    // V31.6: 長期のFRONT/BACK偏りを抑えるため、新人職種の人口補正を一段強化。
+    // 生成済みドラフト候補も逐次カウントし、同じ不足職ばかりを過剰生成しない。
+    // 完全均等には固定せず、重み0.45〜1.65の範囲で自然な揺らぎを残す。
+    const populationForJobBalance = [...players.filter(p => p.active), ...draftProspects];
+    const activeJobCounts = Object.fromEntries(JOBS.map(j => [j, populationForJobBalance.filter(p => p.job === j).length]));
+    const targetPerJob = populationForJobBalance.length / JOBS.length;
+    const weightedJobs = JOBS.map(j => {
+      const diff = targetPerJob - activeJobCounts[j];
+      const weight = Math.max(0.45, Math.min(1.65, 1 + diff / 10));
+      return { job:j, weight };
+    });
+    const totalJobWeight = weightedJobs.reduce((sum,x)=>sum+x.weight,0);
+    let jobRoll = Math.random() * totalJobWeight;
+    let job = weightedJobs[weightedJobs.length - 1].job;
+    for (const x of weightedJobs) { jobRoll -= x.weight; if (jobRoll <= 0) { job = x.job; break; } }
+    const bStats = {
+      pow: Math.min(95, baseVal + Math.floor(Math.random() * 15)),
+      def: Math.min(95, baseVal + Math.floor(Math.random() * 15)),
+      sta: Math.min(95, baseVal + Math.floor(Math.random() * 15)),
+      spd: Math.min(95, baseVal + Math.floor(Math.random() * 15)),
+      tec: Math.min(95, baseVal + Math.floor(Math.random() * 15)),
+      int: Math.min(95, baseVal + Math.floor(Math.random() * 15))
+    };
+
+    const baseName = INITIAL_NAMES[Math.floor(Math.random() * INITIAL_NAMES.length)];
+    // V31.5: 記号1文字サフィックス廃止を継続。重複時は読みやすいローマ数字にする。
+    const toRoman = n => {
+      const map = [[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+      let out = ''; for (const [v,r] of map) while (n >= v) { out += r; n -= v; } return out;
+    };
+    const usedNames = new Set([...players, ...draftProspects].map(p => p.name));
+    let name = baseName, suffixNo = 2;
+    while (usedNames.has(name)) name = `${baseName} ${toRoman(suffixNo++)}`;
+    const race = RACES[Math.floor(Math.random() * RACES.length)];
+    
+    const prospect = createNewPlayer(name, age, race, job, null, truePot, bStats);
+    
+    const pots = ['S', 'A', 'B', 'C', 'D'];
+    let predPot = truePot;
+    if (Math.random() < 0.35) {
+      const idx = pots.indexOf(truePot);
+      const shift = Math.random() < 0.5 ? -1 : 1;
+      predPot = pots[Math.max(0, Math.min(pots.length - 1, idx + shift))];
+    }
+
+    prospect.potential = predPot;
+    prospect.background = bgs[Math.floor(Math.random() * bgs.length)];
+    prospect.title = titles[Math.floor(Math.random() * titles.length)];
+    prospect.draftStatus = 'AVAILABLE';
+    
+    draftProspects.push(prospect);
+  }
+}
+
+function initDraftState() {
+  draftState = {
+    round: 1,
+    phase: 'USER_PICK_1',
+    userPickId: null,
+    cpuPicks: {},
+    lotteryTargets: [],
+    lotteryWinners: {},
+    remainingTeams: teams.map(t => t.id),
+    history: []
+  };
+  logDraft("【ドラフト会議開始】1巡目指名選手を選択してください。");
+}
+
+function selectUserDraftPick(prospectId) {
+  if (draftState.phase !== 'USER_PICK_1' && draftState.phase !== 'FALLBACK_USER_1' && draftState.phase !== 'WAIVER_2') return;
+
+  const prospect = draftProspects.find(p => p.id === prospectId);
+  if (!prospect || prospect.draftStatus !== 'AVAILABLE') return;
+
+  if (draftState.phase === 'USER_PICK_1') {
+    draftState.userPickId = prospectId;
+    logDraft(`自クラブ1巡目希望: ${prospect.name} (${prospect.job}/OVR${prospect.ovr})`);
+    runCpu1stPicksAndLottery();
+  } else if (draftState.phase === 'FALLBACK_USER_1') {
+    finalizePick(teams.find(t=>t.isPlayer).id, prospectId, 1, true, 0);
+    draftState.remainingTeams = draftState.remainingTeams.filter(id => id !== teams.find(t=>t.isPlayer).id);
+    processNextFallbackOrRound2();
+  } else if (draftState.phase === 'WAIVER_2') {
+    const playerTeam = teams.find(t=>t.isPlayer);
+    finalizePick(playerTeam.id, prospectId, 2, false, 0);
+    draftState.remainingTeams = draftState.remainingTeams.filter(id => id !== playerTeam.id);
+    processWaiverRound2();
+  }
+}
+
+function evaluateProspectForTeam(teamId, prospect) {
+  const teamPlayers = players.filter(p => p.teamId === teamId && p.active);
+  const sameJob = teamPlayers.filter(p => p.job === prospect.job).length;
+  const group = getPositionGroup(prospect.job);
+  const sameGroup = teamPlayers.filter(p => getPositionGroup(p.job) === group).length;
+  const otherGroup = teamPlayers.length - sameGroup;
+  const potBonus = {S:24,A:14,B:7,C:1,D:-5}[prospect.potential] || 0;
+  let score = prospect.ovr * 1.05 + potBonus + Math.max(-4,(24-prospect.age)*0.55);
+  // 2-2-1を安定して組めるロスターを最優先。人数だけでなく同職偏重も抑える。
+  if (sameGroup < 4) score += (4-sameGroup)*5.0;
+  if (sameGroup <= 2) score += 8;
+  if (otherGroup >= sameGroup+3) score += 8;
+  if (sameJob === 0) score += 7; else if (sameJob === 1) score += 3; else if (sameJob >= 3) score -= 10;
+  // S級はポジション被りでも取りに行く「逃せない才能」。
+  if (prospect.potential === 'S') score += 10;
+  return score + Math.random()*1.5;
+}
+
+function runCpu1stPicksAndLottery() {
+  const playerTeam = teams.find(t=>t.isPlayer);
+  draftState.cpuPicks = {};
+  
+  teams.filter(t => !t.isPlayer).forEach(t => {
+    const available = draftProspects.filter(p => p.draftStatus === 'AVAILABLE');
+    available.sort((a,b) => evaluateProspectForTeam(t.id, b) - evaluateProspectForTeam(t.id, a));
+    const pick = available[0];
+    draftState.cpuPicks[t.id] = pick.id;
+  });
+
+  const allPicks = { [playerTeam.id]: draftState.userPickId, ...draftState.cpuPicks };
+  const grouped = {};
+  Object.keys(allPicks).forEach(tId => {
+    const pId = allPicks[tId];
+    if (!grouped[pId]) grouped[pId] = [];
+    grouped[pId].push(tId);
+  });
+
+  logDraft("=== 1巡目全クラブ指名一斉公開 ===", "highlight");
+  draftState.remainingTeams = [];
+  
+  Object.keys(grouped).forEach(pId => {
+    const competingTeams = grouped[pId];
+    const targetP = draftProspects.find(p => p.id === pId);
+
+    if (competingTeams.length === 1) {
+      finalizePick(competingTeams[0], pId, 1, false, 1);
+    } else {
+      logDraft(`【競合発生】${targetP.name} に ${competingTeams.length} クラブが競合！`, "highlight");
+      const winnerId = competingTeams[Math.floor(Math.random() * competingTeams.length)];
+      finalizePick(winnerId, pId, 1, false, competingTeams.length);
+      competingTeams.filter(id => id !== winnerId).forEach(id => draftState.remainingTeams.push(id));
+    }
+  });
+
+  if (draftState.remainingTeams.includes(playerTeam.id)) {
+    draftState.phase = 'FALLBACK_USER_1';
+    logDraft("抽選に外れました。候補一覧より「外れ1位」を選択してください。", "highlight");
+  } else {
+    processNextFallbackOrRound2();
+  }
+  updateUI();
+}
+
+function processNextFallbackOrRound2() {
+  const playerTeam = teams.find(t=>t.isPlayer);
+  
+  const cpuFallbacks = draftState.remainingTeams.filter(id => id !== playerTeam.id);
+  cpuFallbacks.forEach(tId => {
+    const available = draftProspects.filter(p => p.draftStatus === 'AVAILABLE');
+    available.sort((a,b) => evaluateProspectForTeam(tId, b) - evaluateProspectForTeam(tId, a));
+    if (available.length > 0) {
+      finalizePick(tId, available[0].id, 1, true, 1);
+    }
+  });
+
+  draftState.remainingTeams = [];
+
+  logDraft("=== ドラフト2巡目（前年下位順ウェーバー）開始 ===", "highlight");
+  draftState.round = 2;
+  draftState.phase = 'WAIVER_2';
+  
+  const reversedStandings = [...lastSeasonStandings].reverse();
+  draftState.remainingTeams = reversedStandings.map(s => s.teamId);
+
+  processWaiverRound2();
+}
+
+function processWaiverRound2() {
+  const playerTeam = teams.find(t=>t.isPlayer);
+
+  while (draftState.remainingTeams.length > 0) {
+    const currentTeamId = draftState.remainingTeams[0];
+    if (currentTeamId === playerTeam.id) {
+      logDraft("あなたの2巡目指名順です。候補者を選択してください。", "highlight");
+      updateUI();
+      return;
+    }
+
+    const available = draftProspects.filter(p => p.draftStatus === 'AVAILABLE');
+    available.sort((a,b) => evaluateProspectForTeam(currentTeamId, b) - evaluateProspectForTeam(currentTeamId, a));
+    if (available.length > 0) {
+      finalizePick(currentTeamId, available[0].id, 2, false, 1);
+    }
+    draftState.remainingTeams.shift();
+  }
+
+  completeDraft();
+}
+
+function finalizePick(teamId, prospectId, round, isFallback, competeCount) {
+  const team = teams.find(t => t.id === teamId);
+  const prospect = draftProspects.find(p => p.id === prospectId);
+  
+  prospect.draftStatus = 'DRAFTED';
+  prospect.teamId = teamId;
+  prospect.draftHistory = {
+    season: currentSeason,
+    round: round,
+    teamName: team.name,
+    isFallback: isFallback,
+    competeCount: competeCount
+  };
+
+  const draftLabel = round === 1 ? (isFallback ? 'ドラフト外れ1位' : 'ドラフト1巡目') : `ドラフト${round}巡目`;
+  prospect.careerHistory.push(`${prospect.age}歳 第${currentSeason}期 ${draftLabel}で${team.name}入団`);
+
+  players.push(prospect);
+  logDraft(`[確定] ${team.name} -> ${prospect.name} (${prospect.job}/OVR${prospect.ovr}) [${round}巡目${isFallback?'外れ':''}]`);
+}
+
+const MAX_ROSTER_SIZE = 10;
+
+function rosterKeepScore(p, teamPlayers) {
+  const potBonus = {S:14, A:9, B:5, C:1, D:-3}[p.potential] || 0;
+  const agePenalty = Math.max(0, p.age - 29) * 1.4;
+  const jobCount = teamPlayers.filter(x => x.job === p.job).length;
+  const groupCount = teamPlayers.filter(x => getPositionGroup(x.job) === getPositionGroup(p.job)).length;
+  const scarcityBonus = (groupCount <= 3 ? 12 : groupCount === 4 ? 5 : 0) + (jobCount <= 1 ? 5 : jobCount === 2 ? 2 : -3);
+  return p.ovr + potBonus + scarcityBonus - agePenalty;
+}
+
+function releasePlayerFromRoster(p, team, reason='ロースター整理') {
+  p.active = false;
+  p.exitType = 'RELEASED';
+  p.exitSeason = currentSeason;
+  p.selectedForTeamMatch = false;
+  p.retirementPending = false;
+  releasedCountThisSeason++;
+  p.careerHistory.push(`${p.age}歳 第${currentSeason}期 ${team.name}退団 (${reason})`);
+  logDraft(`[退団] ${team.name}: ${p.name} (${p.job}/OVR${p.ovr}) - ${reason}`);
+}
+
+function trimCpuRoster(team) {
+  let roster = players.filter(p => p.teamId === team.id && p.active);
+  while (roster.length > MAX_ROSTER_SIZE) {
+    const ranked = [...roster].sort((a,b) => rosterKeepScore(a, roster) - rosterKeepScore(b, roster));
+    const cut = ranked[0];
+    releasePlayerFromRoster(cut, team, '10人ロースター枠');
+    roster = roster.filter(p => p.id !== cut.id);
+  }
+}
+
+function trimPlayerRoster(team) {
+  let roster = players.filter(p => p.teamId === team.id && p.active);
+  if (balanceTestMode) {
+    while (roster.length > MAX_ROSTER_SIZE) {
+      const cut = [...roster].sort((a,b)=>a.ovr-b.ovr)[0];
+      releasePlayerFromRoster(cut, team, 'BALANCE TEST 自動整理');
+      roster = roster.filter(p => p.id !== cut.id);
+    }
+    return;
+  }
+  while (roster.length > MAX_ROSTER_SIZE) {
+    const excess = roster.length - MAX_ROSTER_SIZE;
+    const ordered = [...roster].sort((a,b)=>a.ovr-b.ovr);
+    const lines = ordered.map((p,i)=>`${i+1}. ${p.name} / ${p.age}歳 / ${p.job} / OVR${p.ovr} / Pot ${p.potential}`).join('\n');
+    const ans = prompt(`所属が${roster.length}名です。上限${MAX_ROSTER_SIZE}名のため、あと${excess}名の退団が必要です。\n\n退団させる選手の番号を1つ入力してください。\n\n${lines}`);
+    if (ans === null) {
+      alert('ドラフト完了にはロースターを10名以下にする必要があります。退団選手を選択してください。');
+      continue;
+    }
+    const idx = Number(ans) - 1;
+    if (!Number.isInteger(idx) || idx < 0 || idx >= ordered.length) {
+      alert('一覧にある番号を入力してください。');
+      continue;
+    }
+    const cut = ordered[idx];
+    if (!confirm(`${cut.name} (${cut.job}/OVR${cut.ovr}) を退団させますか？`)) continue;
+    releasePlayerFromRoster(cut, team, '10人ロースター枠');
+    roster = roster.filter(p => p.id !== cut.id);
+  }
+}
+
+function normalizeStartingSelections() {
+  const bestValidFive = roster => {
+    if (roster.length <= 5) return roster;
+    let best = null, bestScore = -Infinity;
+    for (let a=0;a<roster.length-4;a++) for(let b=a+1;b<roster.length-3;b++) for(let c=b+1;c<roster.length-2;c++) for(let d=c+1;d<roster.length-1;d++) for(let e=d+1;e<roster.length;e++) {
+      const five=[roster[a],roster[b],roster[c],roster[d],roster[e]];
+      const front=five.filter(p=>getPositionGroup(p.job)==='FRONT').length;
+      const back=5-front;
+      if (front < 2 || back < 2) continue;
+      const score=five.reduce((sum,p)=>sum+p.ovr,0);
+      if (score>bestScore) { bestScore=score; best=five; }
+    }
+    return best || [...roster].sort((a,b)=>b.ovr-a.ovr).slice(0,5);
+  };
+
+  teams.forEach(team => {
+    const roster = players.filter(p => p.teamId === team.id && p.active).sort((a,b)=>b.ovr-a.ovr);
+    roster.forEach(p => p.selectedForTeamMatch = false);
+    if (team.isPlayer) {
+      bestValidFive(roster).forEach(p => p.selectedForTeamMatch = true);
+    }
+    // CPUは試合時に2-2-1条件下で自動最適選出。
+  });
+}
+
+function enforceRosterLimit() {
+  teams.forEach(team => {
+    if (team.isPlayer) trimPlayerRoster(team);
+    else trimCpuRoster(team);
+  });
+  normalizeStartingSelections();
+}
+
+function completeDraft() {
+  draftState.phase = 'FINISHED';
+  logDraft("【ドラフト会議終了】全指名が確定しました。", "highlight");
+
+  teams.forEach(t => {
+    let tPlayers = players.filter(p => p.teamId === t.id && p.active);
+    tPlayers.forEach(p => {
+      if (p.retirementPending) {
+        if (tPlayers.length > 5) {
+          p.active = false;
+          p.exitType = 'RETIRED';
+          p.exitSeason = currentSeason;
+          p.retirementPending = false;
+          p.careerHistory.push(`${p.age}歳 第${currentSeason}期 現役引退 (${t.name})`);
+          retiredCountThisSeason++;
+          logDraft(`[引退] ${t.name}: ${p.name} 選手が正式引退しました。`);
+          tPlayers = tPlayers.filter(x => x.id !== p.id);
+        } else {
+          p.retirementPending = false;
+          logDraft(`[引退延期] ${t.name}: ${p.name} 選手はロースター維持のため現役続行します。`);
+        }
+      }
+    });
+  });
+
+  // 引退処理後、全クラブを正式な10人ロースターへ整理する。
+  enforceRosterLimit();
+
+  // 次季年俸を最新OVR・実績で自動査定。契約年数/交渉は今後のFAシステムで追加する。
+  refreshAllSalaries();
+
+  saveLeagueSnapshot(currentSeason);
+
+  currentSeason++;
+  seasonPhase = 'REGULAR';
+  players.forEach(p => p.seasonStats = { team: resetStatObj(), solo: resetStatObj() });
+  generateSchedule();
+
+  if (!balanceTestMode) {
+    document.getElementById('btnStartTourney').style.display = 'none';
+    document.getElementById('btnNextMatch').disabled = false;
+    document.getElementById('btnAutoSeason').disabled = false;
+    updateUI();
+  }
+}
+
+function logDraft(msg, type = '') {
+  const box = document.getElementById('draftLog');
+  const div = document.createElement('div');
+  div.className = `log-line ${type}`;
+  div.textContent = msg;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ==========================================
+// LEAGUE SNAPSHOT & REPORT GENERATION
+// ==========================================
+function saveLeagueSnapshot(seasonNum) {
+  const activeP = players.filter(p => p.active);
+  const retiredP = players.filter(p => !p.active && p.exitType === 'RETIRED');
+  const releasedP = players.filter(p => !p.active && p.exitType === 'RELEASED');
+  
+  const avgAge = activeP.length > 0 ? (activeP.reduce((s, p) => s + getReportAge(p), 0) / activeP.length).toFixed(1) : '0';
+  const avgOvr = activeP.length > 0 ? (activeP.reduce((s, p) => s + getReportOvr(p), 0) / activeP.length).toFixed(1) : '0';
+  const ovr90plus = activeP.filter(p => p.ovr >= 90).length;
+  const age40plus = activeP.filter(p => p.age >= 40).length;
+
+  leagueSnapshots.push({
+    season: seasonNum === 0 ? 'INITIAL' : seasonNum,
+    activePlayers: activeP.length,
+    retiredTotal: retiredP.length,
+    releasedTotal: releasedP.length,
+    averageAge: avgAge,
+    averageOVR: avgOvr,
+    ovr90plus: ovr90plus,
+    age40plus: age40plus,
+    retiredThisSeason: seasonNum === 0 ? 0 : retiredCountThisSeason,
+    releasedThisSeason: seasonNum === 0 ? 0 : releasedCountThisSeason
+  });
+}
+
+
+function getCurrentSoloSummary() {
+  const activeP = players.filter(p => p.active);
+  let matches = activeP.reduce((sum, p) => sum + p.seasonStats.solo.m, 0) / 2;
+  let koWins = activeP.reduce((sum, p) => sum + p.seasonStats.solo.kill, 0);
+  let wins = activeP.reduce((sum, p) => sum + p.seasonStats.solo.w, 0);
+  let decisionWins = Math.max(0, wins - koWins);
+
+  // Season終了処理後にseasonStatsがリセットされた場合も、同Seasonの大会summaryから復元表示する。
+  const sum = tournamentState.summary;
+  if (matches === 0 && sum && sum.season === currentSeason && sum.matches > 0) {
+    matches = sum.matches;
+    koWins = typeof sum.koWins === 'number' ? sum.koWins : sum.matches;
+    decisionWins = typeof sum.decisionWins === 'number' ? sum.decisionWins : 0;
+    wins = koWins + decisionWins;
+  }
+  const koRate = wins > 0 ? ((koWins / wins) * 100).toFixed(1) : '0.0';
+  return { matches, koWins, wins, decisionWins, koRate };
+}
+
+
+function getFinanceDebugRows() {
+  ensureFinanceState();
+  const standings = calculateTeamStandings();
+  const rankMap = new Map(standings.map((x,i)=>[x.teamId,{...x,rank:i+1}]));
+  return teams.map(team => {
+    const roster = players.filter(p=>p.active && p.teamId===team.id);
+    const payroll = getTeamPayroll(team.id);
+    const rosterAvg = roster.length ? roster.reduce((s,p)=>s+(p.ovr||0),0)/roster.length : 0;
+    const five = getLegalStartingFive(team, true);
+    const start5Avg = five.length ? five.reduce((s,p)=>s+(p.ovr||0),0)/five.length : 0;
+    const st = rankMap.get(team.id);
+    const revenue = Number(team.lastRevenue)||0;
+    const profit = Number(team.lastProfit)||0;
+    const ratio = revenue>0 ? payroll/revenue*100 : null;
+    return {team, roster, payroll, rosterAvg, start5Avg, st, revenue, profit, ratio, balance:Number(team.balance)||0};
+  });
+}
+
+function financeClassByProfit(v) {
+  if (v < -1000) return 'finance-status-bad';
+  if (v < 0) return 'finance-status-watch';
+  return 'finance-status-ok';
+}
+
+function renderFinanceDebugPanel() {
+  const summaryEl=document.getElementById('financeDebugSummary');
+  if (!summaryEl) return;
+  const rows=getFinanceDebugRows();
+  const my=rows.find(x=>x.team.isPlayer);
+  if (!my) return;
+
+  const phaseLabel = seasonPhase==='REGULAR' ? 'レギュラーシーズン' : seasonPhase==='TOURNAMENT' ? '個人選手権' : seasonPhase==='DRAFT' ? 'シーズン終了 / ドラフト' : seasonPhase;
+  const atStart = currentSeason===1 && seasonPhase==='REGULAR' && currentMatchIndex===0;
+  const atCheckpoint = (currentSeason===5 || currentSeason===10) && seasonPhase==='DRAFT';
+  const timing = atStart ? '📸 今が S1開始チェックポイントです。スクショ①〜③推奨。' : atCheckpoint ? `📸 今が S${currentSeason}終了チェックポイントです。スクショ①〜③推奨。` : `現在 S${currentSeason} / ${phaseLabel}。基本チェックポイントは S1開始・S5終了・S10終了です。`;
+  document.getElementById('financeDebugTiming').innerHTML = `<strong>${timing}</strong>`;
+
+  const wl = my.st ? `${my.st.w}-${my.st.l}${my.st.d?`-${my.st.d}`:''}` : `${my.team.teamWins||0}-${my.team.teamLosses||0}`;
+  const rank = my.st?.rank || '-';
+  const profitSign=my.profit>=0?'+':'';
+  const ratioText=my.ratio===null?'-':`${my.ratio.toFixed(1)}%`;
+  const balanceClass=my.balance<0?'finance-status-bad':my.balance<2000?'finance-status-watch':'finance-status-ok';
+  summaryEl.innerHTML=`
+    <div class="debug-card"><div class="debug-card-title">SEASON / PHASE</div>S${currentSeason} / ${phaseLabel}</div>
+    <div class="debug-card"><div class="debug-card-title">順位 / W-L</div>${rank}位 / ${wl}</div>
+    <div class="debug-card"><div class="debug-card-title">保有資金</div><span class="${balanceClass}">${formatMoney(my.balance)}</span></div>
+    <div class="debug-card"><div class="debug-card-title">年俸総額</div>${formatMoney(my.payroll)}</div>
+    <div class="debug-card"><div class="debug-card-title">前季収入</div>${formatMoney(my.revenue)}</div>
+    <div class="debug-card"><div class="debug-card-title">前季収支</div><span class="${financeClassByProfit(my.profit)}">${profitSign}${formatMoney(my.profit)}</span></div>
+    <div class="debug-card"><div class="debug-card-title">年俸 / 収入</div>${ratioText}</div>
+    <div class="debug-card"><div class="debug-card-title">ROSTER / START5 OVR</div>${my.rosterAvg.toFixed(1)} / ${my.start5Avg.toFixed(1)}</div>`;
+
+  const tierOrder=['ELITE','STRONG','MID','LOW','PLAYER'];
+  const tierRows=tierOrder.map(tier=>{
+    const arr=rows.filter(x=>(x.team.tier||'')===tier);
+    if(!arr.length) return null;
+    const av=k=>arr.reduce((s,x)=>s+x[k],0)/arr.length;
+    return {tier,n:arr.length,balance:av('balance'),payroll:av('payroll'),revenue:av('revenue'),profit:av('profit'),rosterAvg:av('rosterAvg'),start5Avg:av('start5Avg')};
+  }).filter(Boolean);
+  document.getElementById('financeDebugTier').innerHTML=`<table class="finance-debug-table"><thead><tr><th>TIER</th><th>CLUBS</th><th>AVG資金</th><th>AVG年俸</th><th>AVG収入</th><th>AVG収支</th><th>ROSTER OVR</th><th>START5 OVR</th></tr></thead><tbody>${tierRows.map(x=>`<tr><td>${x.tier}</td><td>${x.n}</td><td>${formatMoney(x.balance)}</td><td>${formatMoney(x.payroll)}</td><td>${formatMoney(x.revenue)}</td><td class="${financeClassByProfit(x.profit)}">${x.profit>=0?'+':''}${formatMoney(x.profit)}</td><td>${x.rosterAvg.toFixed(1)}</td><td>${x.start5Avg.toFixed(1)}</td></tr>`).join('')}</tbody></table>`;
+
+  const sorted=[...rows].sort((a,b)=>(a.st?.rank||99)-(b.st?.rank||99));
+  document.getElementById('financeDebugClubs').innerHTML=`<table class="finance-debug-table"><thead><tr><th>#</th><th>CLUB</th><th>TIER</th><th>W-L</th><th>資金</th><th>年俸</th><th>収入</th><th>収支</th><th>年俸/収入</th><th>ROSTER</th><th>START5</th></tr></thead><tbody>${sorted.map(x=>{const wl=x.st?`${x.st.w}-${x.st.l}${x.st.d?`-${x.st.d}`:''}`:'-';return `<tr><td>${x.st?.rank||'-'}</td><td>${x.team.name}${x.team.isPlayer?' (YOU)':''}</td><td>${x.team.tier||'-'}</td><td>${wl}</td><td>${formatMoney(x.balance)}</td><td>${formatMoney(x.payroll)}</td><td>${formatMoney(x.revenue)}</td><td class="${financeClassByProfit(x.profit)}">${x.profit>=0?'+':''}${formatMoney(x.profit)}</td><td>${x.ratio===null?'-':x.ratio.toFixed(0)+'%'}</td><td>${x.rosterAvg.toFixed(1)}</td><td>${x.start5Avg.toFixed(1)}</td></tr>`}).join('')}</tbody></table>`;
+
+  const roster=[...my.roster].sort((a,b)=>(b.salary||0)-(a.salary||0));
+  document.getElementById('financeDebugRoster').innerHTML=`<table class="finance-debug-table"><thead><tr><th>PLAYER</th><th>AGE</th><th>JOB</th><th>OVR</th><th>POT</th><th>年俸</th><th>年俸構成比</th></tr></thead><tbody>${roster.map(p=>`<tr><td>${p.name}</td><td>${p.age}</td><td>${p.job}</td><td>${p.ovr}</td><td>${p.potential}</td><td>${formatMoney(p.salary)}</td><td>${my.payroll?((p.salary||0)/my.payroll*100).toFixed(1):'0.0'}%</td></tr>`).join('')}</tbody></table>`;
+}
+
+function copyFinanceDebugReport() {
+  const rows=getFinanceDebugRows();
+  const my=rows.find(x=>x.team.isPlayer);
+  if(!my) return;
+  const tierOrder=['ELITE','STRONG','MID','LOW','PLAYER'];
+  const tierLines=tierOrder.map(tier=>{
+    const arr=rows.filter(x=>(x.team.tier||'')===tier);
+    if(!arr.length) return null;
+    const av=k=>arr.reduce((s,x)=>s+x[k],0)/arr.length;
+    return `${tier}: CLUBS ${arr.length} / BAL ${Math.round(av('balance'))} / PAYROLL ${Math.round(av('payroll'))} / REV ${Math.round(av('revenue'))} / PROFIT ${Math.round(av('profit'))} / ROSTER OVR ${av('rosterAvg').toFixed(1)} / START5 ${av('start5Avg').toFixed(1)}`;
+  }).filter(Boolean).join('\n');
+  const standings=[...rows].sort((a,b)=>(a.st?.rank||99)-(b.st?.rank||99));
+  const clubLines=standings.map(x=>`${x.st?.rank||'-'}. ${x.team.name} [${x.team.tier||'-'}] ${x.st?`${x.st.w}-${x.st.l}`:'-'} / BAL ${Math.round(x.balance)} / PAY ${Math.round(x.payroll)} / REV ${Math.round(x.revenue)} / PROFIT ${Math.round(x.profit)} / PAYREV ${x.ratio===null?'-':x.ratio.toFixed(1)+'%'} / ROSTER ${x.rosterAvg.toFixed(1)} / START5 ${x.start5Avg.toFixed(1)}`).join('\n');
+  const roster=[...my.roster].sort((a,b)=>(b.salary||0)-(a.salary||0));
+  const rosterLines=roster.map((p,i)=>`${i+1}. ${p.name} / ${p.age} / ${p.job} / OVR${p.ovr} / POT ${p.potential} / SAL ${Math.round(p.salary||0)}`).join('\n');
+  const text=`FANTASY ARENA FINANCE DEBUG\nBUILD: ${BUILD_ID}\nSEASON: ${currentSeason}\nPHASE: ${seasonPhase}\n\nMY CLUB:\n${my.team.name} / BAL ${Math.round(my.balance)} / PAYROLL ${Math.round(my.payroll)} / REV ${Math.round(my.revenue)} / PROFIT ${Math.round(my.profit)} / ROSTER OVR ${my.rosterAvg.toFixed(1)} / START5 ${my.start5Avg.toFixed(1)}\n\nTIER FINANCE:\n${tierLines}\n\nALL CLUBS:\n${clubLines}\n\nMY SALARIES:\n${rosterLines}`;
+  copyTextWithFallback(text).then(()=>alert('FINANCE DEBUGをコピーしました。')).catch(()=>alert('FINANCE DEBUGのコピーに失敗しました。'));
+}
+
+function renderDebugReport() {
+  renderFinanceDebugPanel();
+  const activeP = players.filter(p => p.active);
+  const retiredP = players.filter(p => !p.active && p.exitType === 'RETIRED');
+  const releasedP = players.filter(p => !p.active && p.exitType === 'RELEASED');
+
+  if (activeP.length === 0) return;
+
+  const ages = activeP.map(p => p.age);
+  const ovrs = activeP.map(p => p.ovr);
+
+  const avgAge = (ages.reduce((a,b)=>a+b, 0) / activeP.length).toFixed(1);
+  const avgOvr = (ovrs.reduce((a,b)=>a+b, 0) / activeP.length).toFixed(1);
+  const maxOvr = Math.max(...ovrs);
+  const minOvr = Math.min(...ovrs);
+  const maxAge = Math.max(...ages);
+
+  // DEBUG用 統計項目の集計
+  const teamKillTotal = activeP.reduce((sum, p) => sum + p.seasonStats.team.kill, 0);
+  const teamAssistTotal = activeP.reduce((sum, p) => sum + p.seasonStats.team.assist, 0);
+  const assistKillRatio = teamKillTotal > 0 ? (teamAssistTotal / teamKillTotal).toFixed(2) : '0.00';
+
+  const soloSummary = getCurrentSoloSummary();
+  const soloMatchesTotal = soloSummary.matches;
+  const soloKoWinsTotal = soloSummary.koWins;
+  const soloWinsTotal = soloSummary.wins;
+  const soloDecisionWinsTotal = soloSummary.decisionWins;
+  const soloKoRate = soloSummary.koRate;
+  const teamElimTotal = activeP.reduce((sum, p) => sum + (p.seasonStats.team.elim || 0), 0);
+  const elimKillRatio = teamKillTotal > 0 ? (teamElimTotal / teamKillTotal).toFixed(2) : '0.00';
+  const teamPrevTotal = activeP.reduce((sum, p) => sum + (p.seasonStats.team.prev || 0), 0);
+  const teamGuardTotal = activeP.reduce((sum, p) => sum + (p.seasonStats.team.guard || 0), 0);
+  const teamEvaTotal = activeP.reduce((sum, p) => sum + (p.seasonStats.team.eva || 0), 0);
+
+  document.getElementById('reportBasic').innerHTML = `
+    <div class="debug-card"><div class="debug-card-title">現在シーズン</div>第 ${currentSeason} 期</div>
+    <div class="debug-card"><div class="debug-card-title">現役 / 引退 / 退団</div>${activeP.length} 名 / ${retiredP.length} 名 / ${releasedP.length} 名</div>
+    <div class="debug-card"><div class="debug-card-title">平均年齢 / 平均OVR</div>${avgAge} 歳 / ${avgOvr}</div>
+    <div class="debug-card"><div class="debug-card-title">最高 / 最低OVR</div>OVR ${maxOvr} / OVR ${minOvr}</div>
+    <div class="debug-card"><div class="debug-card-title">最高齢現役</div>${maxAge} 歳</div>
+    <div class="debug-card"><div class="debug-card-title">直近 引退 / 退団</div>${retiredCountThisSeason} 名 / ${releasedCountThisSeason} 名</div>
+    <div class="debug-card"><div class="debug-card-title">TEAM ELIM TOTAL</div>${teamElimTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">TEAM KILL TOTAL</div>${teamKillTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">ELIM / KILL RATIO</div>${elimKillRatio}</div>
+    <div class="debug-card"><div class="debug-card-title">TEAM ASSIST TOTAL</div>${teamAssistTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">TEAM PREV TOTAL</div>${teamPrevTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">TEAM GUARD TOTAL</div>${teamGuardTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">TEAM EVA TOTAL</div>${teamEvaTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">ASSIST / KILL RATIO</div>${assistKillRatio}</div>
+    <div class="debug-card"><div class="debug-card-title">SOLO MATCHES TOTAL</div>${Math.floor(soloMatchesTotal)}</div>
+    <div class="debug-card"><div class="debug-card-title">SOLO KO WINS / DECISION WINS (KO ONLY)</div>${soloKoWinsTotal} / ${soloDecisionWinsTotal}</div>
+    <div class="debug-card"><div class="debug-card-title">SOLO KO RATE</div>${soloKoRate}%</div>
+  `;
+
+  const ovrBins = { '100': 0, '99': 0, '98': 0, '95-97': 0, '90-94': 0, '85-89': 0, '80-84': 0, '70-79': 0, '60-69': 0, '59-': 0 };
+  activeP.forEach(p => {
+    if (p.ovr >= 100) ovrBins['100']++;
+    else if (p.ovr === 99) ovrBins['99']++;
+    else if (p.ovr === 98) ovrBins['98']++;
+    else if (p.ovr >= 95) ovrBins['95-97']++;
+    else if (p.ovr >= 90) ovrBins['90-94']++;
+    else if (p.ovr >= 85) ovrBins['85-89']++;
+    else if (p.ovr >= 80) ovrBins['80-84']++;
+    else if (p.ovr >= 70) ovrBins['70-79']++;
+    else if (p.ovr >= 60) ovrBins['60-69']++;
+    else ovrBins['59-']++;
+  });
+  let ovrHtml = '<ul>';
+  Object.keys(ovrBins).forEach(k => { ovrHtml += `<li><strong>OVR ${k}:</strong> ${ovrBins[k]} 名</li>`; });
+  document.getElementById('reportOvrDist').innerHTML = ovrHtml + '</ul>';
+
+  const ageBins = { '18-22': 0, '23-29': 0, '30-34': 0, '35-39': 0, '40-44': 0, '45+': 0 };
+  activeP.forEach(p => {
+    if (p.age <= 22) ageBins['18-22']++;
+    else if (p.age <= 29) ageBins['23-29']++;
+    else if (p.age <= 34) ageBins['30-34']++;
+    else if (p.age <= 39) ageBins['35-39']++;
+    else if (p.age <= 44) ageBins['40-44']++;
+    else ageBins['45+']++;
+  });
+  let ageHtml = '<ul>';
+  Object.keys(ageBins).forEach(k => { ageHtml += `<li><strong>${k}歳:</strong> ${ageBins[k]} 名</li>`; });
+  document.getElementById('reportAgeDist').innerHTML = ageHtml + '</ul>';
+
+  const potBins = { 'S': 0, 'A': 0, 'B': 0, 'C': 0, 'D': 0 };
+  activeP.forEach(p => { if (potBins[p.truePotential] !== undefined) potBins[p.truePotential]++; });
+  let potHtml = '<ul>';
+  Object.keys(potBins).forEach(k => { potHtml += `<li><strong>Potential ${k}:</strong> ${potBins[k]} 名</li>`; });
+  document.getElementById('reportPotDist').innerHTML = potHtml + '</ul>';
+
+  const ageGroups = { '18-22': [], '23-29': [], '30-34': [], '35-39': [], '40+': [] };
+  activeP.forEach(p => {
+    if (p.age <= 22) ageGroups['18-22'].push(p.ovr);
+    else if (p.age <= 29) ageGroups['23-29'].push(p.ovr);
+    else if (p.age <= 34) ageGroups['30-34'].push(p.ovr);
+    else if (p.age <= 39) ageGroups['35-39'].push(p.ovr);
+    else ageGroups['40+'].push(p.ovr);
+  });
+  let ageOvrHtml = '<ul>';
+  Object.keys(ageGroups).forEach(k => {
+    const arr = ageGroups[k];
+    const avg = arr.length > 0 ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '-';
+    ageOvrHtml += `<li><strong>${k}歳:</strong> 平均OVR ${avg} (${arr.length}名)</li>`;
+  });
+  document.getElementById('reportAgeOvr').innerHTML = ageOvrHtml + '</ul>';
+
+  const powerRows = teams.map(t => { const r=activeP.filter(p=>p.teamId===t.id); const avg=r.length?r.reduce((z,p)=>z+p.ovr,0)/r.length:0; const f=r.filter(p=>getPositionGroup(p.job)==='FRONT').length; return {t,avg,f,b:r.length-f,n:r.length}; }).sort((a,b)=>b.avg-a.avg);
+  const powerEl=document.getElementById('reportTeamPower');
+  if(powerEl) powerEl.innerHTML='<table><thead><tr><th>#</th><th>CLUB</th><th>TIER</th><th>AVG OVR</th><th>F/B</th><th>ROSTER</th></tr></thead><tbody>'+powerRows.map((x,i)=>`<tr><td>${i+1}</td><td>${x.t.name}${x.t.isPlayer?' (YOU)':''}</td><td>${x.t.tier||'-'}</td><td>${x.avg.toFixed(1)}</td><td>${x.f}/${x.b}</td><td>${x.n}</td></tr>`).join('')+'</tbody></table>';
+
+  let jobHtml = '<table><thead><tr><th>JOBS</th><th>人数</th><th>平均年齢</th><th>平均OVR</th><th>最高齢</th></tr></thead><tbody>';
+  JOBS.forEach(j => {
+    const jList = activeP.filter(p => p.job === j);
+    if (jList.length > 0) {
+      const jAvgAge = (jList.reduce((s,p)=>s+p.age,0)/jList.length).toFixed(1);
+      const jAvgOvr = (jList.reduce((s,p)=>s+p.ovr,0)/jList.length).toFixed(1);
+      const jMaxAge = Math.max(...jList.map(p=>p.age));
+      jobHtml += `<tr><td>${j}</td><td>${jList.length}</td><td>${jAvgAge}</td><td>${jAvgOvr}</td><td>${jMaxAge}歳</td></tr>`;
+    }
+  });
+  document.getElementById('reportJobs').innerHTML = jobHtml + '</tbody></table>';
+
+  const getTopInGroup = (filterFn) => {
+    const filtered = activeP.filter(filterFn);
+    if (filtered.length === 0) return 'なし';
+    filtered.sort((a,b)=>b.ovr - a.ovr);
+    const top = filtered[0];
+    return `${top.name} (${top.age}歳 / ${top.job} / OVR ${top.ovr})`;
+  };
+
+  document.getElementById('reportTopPlayers').innerHTML = `
+    <ul>
+      <li><strong>22歳以下最高:</strong> ${getTopInGroup(p=>p.age<=22)}</li>
+      <li><strong>30歳以上最高:</strong> ${getTopInGroup(p=>p.age>=30)}</li>
+      <li><strong>35歳以上最高:</strong> ${getTopInGroup(p=>p.age>=35)}</li>
+      <li><strong>40歳以上最高:</strong> ${getTopInGroup(p=>p.age>=40)}</li>
+    </ul>
+  `;
+
+  const sortedGrowth = [...activeP].sort((a,b) => b.lastDeltaOvr - a.lastDeltaOvr);
+  const maxG = sortedGrowth[0];
+  const maxD = sortedGrowth[sortedGrowth.length - 1];
+
+  document.getElementById('reportGrowth').innerHTML = `
+    <ul>
+      <li><strong>最大成長:</strong> ${maxG ? `${maxG.name} (${maxG.age}歳) OVR ${maxG.seasonStartOvr} → ${maxG.ovr} (${maxG.lastDeltaOvr >= 0 ? '+' : ''}${maxG.lastDeltaOvr})` : '-'}</li>
+      <li><strong>最大衰退:</strong> ${maxD ? `${maxD.name} (${maxD.age}歳) OVR ${maxD.seasonStartOvr} → ${maxD.ovr} (${maxD.lastDeltaOvr >= 0 ? '+' : ''}${maxD.lastDeltaOvr})` : '-'}</li>
+    </ul>
+  `;
+
+  const statTop = (key, n=5) => [...activeP].sort((a,b)=>(b.seasonStats.team[key]||0)-(a.seasonStats.team[key]||0)).slice(0,n);
+  const fmtTopRows = (list, leadKey) => list.map((p,i) => {
+    const st = p.seasonStats.team;
+    const avg = st.m > 0 ? (st.dmg/st.m).toFixed(1) : '0.0';
+    return `<tr><td>${i+1}</td><td>${p.name}</td><td>${p.age}</td><td>${p.job}</td><td>${p.ovr}</td><td>${st[leadKey]||0}</td><td>${st.dmg}</td><td>${avg}</td><td>${st.elim||0}</td><td>${st.kill}</td><td>${st.assist}</td><td>${st.prev||0}</td><td>${st.guard||0}</td><td>${st.eva||0}</td><td>${st.heal}</td></tr>`;
+  }).join('');
+
+  const elimTop5 = statTop('elim');
+  const dmgTop5 = statTop('dmg');
+  const prevTop5 = statTop('prev');
+  const guardTop = statTop('guard',1)[0];
+  const evaTop = statTop('eva',1)[0];
+  const healTop = statTop('heal',1)[0];
+  const elimLeader = elimTop5[0];
+
+  document.getElementById('reportAdvancedStats').innerHTML = `
+    <p><strong>ELIM最多:</strong> ${elimLeader ? `${elimLeader.name} / ${elimLeader.seasonStats.team.elim} ELIM / ${elimLeader.age}歳 / ${elimLeader.job} / OVR${elimLeader.ovr} / DMG ${elimLeader.seasonStats.team.dmg}` : '-'}</p>
+    <p><strong>PREV最多:</strong> ${prevTop5[0] ? `${prevTop5[0].name} / PREV ${prevTop5[0].seasonStats.team.prev}` : '-'}</p>
+    <p><strong>GUARD最多:</strong> ${guardTop ? `${guardTop.name} / ${guardTop.seasonStats.team.guard}` : '-'}</p>
+    <p><strong>EVA最多:</strong> ${evaTop ? `${evaTop.name} / ${evaTop.seasonStats.team.eva}` : '-'}</p>
+    <p><strong>HEAL最多:</strong> ${healTop ? `${healTop.name} / ${healTop.seasonStats.team.heal}` : '-'}</p>
+    <div class="card-title" style="margin-top:14px;">ELIM 上位5</div>
+    <div class="table-container"><table><thead><tr><th>#</th><th>名前</th><th>年齢</th><th>JOB</th><th>OVR</th><th>ELIM</th><th>DMG</th><th>AVG</th><th>ELIM</th><th>K</th><th>A</th><th>PREV</th><th>GUARD</th><th>EVA</th><th>HEAL</th></tr></thead><tbody>${fmtTopRows(elimTop5,'elim')}</tbody></table></div>
+    <div class="card-title" style="margin-top:14px;">DMG 上位5</div>
+    <div class="table-container"><table><thead><tr><th>#</th><th>名前</th><th>年齢</th><th>JOB</th><th>OVR</th><th>DMG</th><th>DMG</th><th>AVG</th><th>ELIM</th><th>K</th><th>A</th><th>PREV</th><th>GUARD</th><th>EVA</th><th>HEAL</th></tr></thead><tbody>${fmtTopRows(dmgTop5,'dmg')}</tbody></table></div>
+    <div class="card-title" style="margin-top:14px;">PREV 上位5</div>
+    <div class="table-container"><table><thead><tr><th>#</th><th>名前</th><th>年齢</th><th>JOB</th><th>OVR</th><th>PREV</th><th>DMG</th><th>AVG</th><th>ELIM</th><th>K</th><th>A</th><th>PREV</th><th>GUARD</th><th>EVA</th><th>HEAL</th></tr></thead><tbody>${fmtTopRows(prevTop5,'prev')}</tbody></table></div>
+  `;
+
+  let jobAdvHtml = '<table><thead><tr><th>JOB</th><th>平均ELIM</th><th>平均DMG</th><th>平均PREV</th><th>平均GUARD</th><th>平均EVA</th><th>平均HEAL</th></tr></thead><tbody>';
+  JOBS.forEach(j => {
+    const list = activeP.filter(p=>p.job===j);
+    if (!list.length) return;
+    const avg = key => (list.reduce((s,p)=>s+(p.seasonStats.team[key]||0),0)/list.length).toFixed(1);
+    jobAdvHtml += `<tr><td>${j}</td><td>${avg('elim')}</td><td>${avg('dmg')}</td><td>${avg('prev')}</td><td>${avg('guard')}</td><td>${avg('eva')}</td><td>${avg('heal')}</td></tr>`;
+  });
+  let soloJobHtml = jobAdvHtml + '</tbody></table>';
+  soloJobHtml += '<div class="card-title" style="margin-top:14px;">SOLO JOB STATS (通算)</div><table><thead><tr><th>JOB</th><th>W</th><th>L</th><th>WIN%</th><th>試合</th></tr></thead><tbody>';
+  JOBS.forEach(j => {
+    const list = players.filter(p=>p.job===j);
+    const w = list.reduce((n,p)=>n+(p.careerStats?.solo?.w||0),0);
+    const l = list.reduce((n,p)=>n+(p.careerStats?.solo?.l||0),0);
+    const m = w + l;
+    const rate = m ? (w/m*100).toFixed(1) : '0.0';
+    soloJobHtml += `<tr><td>${j}</td><td>${w}</td><td>${l}</td><td>${rate}%</td><td>${m}</td></tr>`;
+  });
+  document.getElementById('reportJobAdvanced').innerHTML = soloJobHtml + '</tbody></table>';
+
+  let champsHtml = '';
+  championshipHistory.forEach(c => {
+    champsHtml += `<tr>
+      <td>S${c.season}</td><td>${c.championName}</td><td>${c.age}</td>
+      <td>${c.job}</td><td>${c.ovr}</td><td>${c.clubName}</td>
+    </tr>`;
+  });
+  document.getElementById('reportChampionsBody').innerHTML = champsHtml || '<tr><td colspan="6">記録なし</td></tr>';
+
+  let snapHtml = '';
+  leagueSnapshots.forEach(s => {
+    snapHtml += `<tr>
+      <td>${s.season}</td><td>${s.activePlayers}</td><td>${s.averageAge}</td>
+      <td>${s.averageOVR}</td><td>${s.ovr90plus}</td><td>${s.age40plus}</td><td>${s.retiredTotal}</td>
+    </tr>`;
+  });
+  document.getElementById('reportSnapshotsBody').innerHTML = snapHtml;
+}
+
+function copyDebugReport() {
+  const activeP = players.filter(p => p.active);
+  const retiredP = players.filter(p => !p.active && p.exitType === 'RETIRED');
+  const releasedP = players.filter(p => !p.active && p.exitType === 'RELEASED');
+
+  const avgAge = activeP.length > 0 ? (activeP.reduce((s, p) => s + getReportAge(p), 0) / activeP.length).toFixed(1) : '0';
+  const avgOvr = activeP.length > 0 ? (activeP.reduce((s, p) => s + getReportOvr(p), 0) / activeP.length).toFixed(1) : '0';
+
+  const teamKillTotal = activeP.reduce((sum, p) => sum + p.seasonStats.team.kill, 0);
+  const teamAssistTotal = activeP.reduce((sum, p) => sum + p.seasonStats.team.assist, 0);
+  const assistKillRatio = teamKillTotal > 0 ? (teamAssistTotal / teamKillTotal).toFixed(2) : '0.00';
+
+  const soloSummary = getCurrentSoloSummary();
+  const soloMatchesTotal = soloSummary.matches;
+  const soloKoWinsTotal = soloSummary.koWins;
+  const soloWinsTotal = soloSummary.wins;
+  const soloDecisionWinsTotal = soloSummary.decisionWins;
+  const soloKoRate = soloSummary.koRate;
+  const teamElimTotal = activeP.reduce((sum, p) => sum + (p.seasonStats.team.elim || 0), 0);
+  const elimKillRatio = teamKillTotal > 0 ? (teamElimTotal / teamKillTotal).toFixed(2) : '0.00';
+  const teamPrevTotal = activeP.reduce((sum, p) => sum + (p.seasonStats.team.prev || 0), 0);
+  const topList = key => [...activeP].sort((a,b)=>(b.seasonStats.team[key]||0)-(a.seasonStats.team[key]||0)).slice(0,5);
+  const compact = list => list.map((p,i) => {
+    const st = p.seasonStats.team;
+    const avg = st.m > 0 ? (st.dmg/st.m).toFixed(1) : '0.0';
+    return `${i+1}. ${p.name} / ${getReportAge(p)}歳 / ${p.job} / OVR${getReportOvr(p)} / ELIM ${st.elim||0} / DMG ${st.dmg} / AVG ${avg} / K ${st.kill} / A ${st.assist} / PREV ${st.prev||0} / GUARD ${st.guard||0} / EVA ${st.eva||0} / HEAL ${st.heal}`;
+  }).join('\n');
+
+  const jobPopulation = JOBS.map(j => `${j} ${activeP.filter(p=>p.job===j).length}`).join(' / ');
+  const frontPop = activeP.filter(p=>getPositionGroup(p.job)==='FRONT').length;
+  const backPop = activeP.length-frontPop;
+  const standingsMap = new Map(calculateTeamStandings().map((x,i)=>[x.teamId,{...x,rank:i+1}]));
+  const teamPowerLines = teams.map(team => {
+    const roster = activeP.filter(p=>p.teamId===team.id);
+    const useSeasonSnapshot = seasonPhase === 'DRAFT' && team.seasonReportSeason === currentSeason;
+    const rosterAvg = useSeasonSnapshot && Number.isFinite(team.seasonReportRosterAvg)
+      ? team.seasonReportRosterAvg
+      : (roster.length ? roster.reduce((z,p)=>z+getReportOvr(p),0)/roster.length : 0);
+    const snapshotFive = useSeasonSnapshot && Array.isArray(team.seasonReportStartingFiveIds)
+      ? team.seasonReportStartingFiveIds.map(id=>players.find(p=>p.id===id)).filter(Boolean)
+      : [];
+    const five = snapshotFive.length ? snapshotFive : getLegalStartingFive(team, true);
+    const fiveAvg = five.length ? five.reduce((z,p)=>z+getReportOvr(p),0)/five.length : 0;
+    const f = five.filter(p=>getPositionGroup(p.job)==='FRONT').length;
+    const b = five.length-f;
+    const jobs = five.map(p=>p.job).join(',');
+    const st = standingsMap.get(team.id);
+    const wl = st ? `${st.w}-${st.l}${st.d?`-${st.d}`:''}` : `${team.teamWins||0}-${team.teamLosses||0}`;
+    return {team, rosterAvg, fiveAvg, f, b, jobs, wl, rank:st?.rank||99};
+  }).sort((a,b)=>a.rank-b.rank);
+
+  let champStr = '';
+  championshipHistory.forEach(c => {
+    champStr += `S${c.season}: ${c.championName} (${c.age}歳, ${c.job}, OVR${c.ovr}, ${c.clubName})\n`;
+  });
+
+  const sum = tournamentState.summary;
+  let tourneyInfo = 'None';
+  if (sum) {
+    const cs = sum.championSnapshot || { name: sum.champion.name, age: sum.champion.age, job: sum.champion.job, ovr: sum.champion.ovr, clubName: sum.clubName };
+    tourneyInfo = `Champion: ${cs.name}\nAge: ${cs.age}\nJob: ${cs.job}\nOVR: ${cs.ovr}\nClub: ${cs.clubName || sum.clubName}\nParticipants: ${sum.participants}\nMatches: ${sum.matches}`;
+  }
+
+  const text = `FANTASY ARENA LEAGUE REPORT
+BUILD: ${BUILD_ID}
+SOLO RULE: KO ONLY
+
+SEASON: ${currentSeason}
+ACTIVE PLAYERS: ${activeP.length}
+RETIRED TOTAL: ${retiredP.length}
+RELEASED TOTAL: ${releasedP.length}
+AVG AGE: ${avgAge}
+AVG OVR: ${avgOvr}
+OVR80+: ${activeP.filter(p=>getReportOvr(p)>=80).length}
+OVR85+: ${activeP.filter(p=>getReportOvr(p)>=85).length}
+OVR90+: ${activeP.filter(p=>getReportOvr(p)>=90).length}
+OVR95+: ${activeP.filter(p=>getReportOvr(p)>=95).length}
+OVR98+: ${activeP.filter(p=>getReportOvr(p)>=98).length}
+OVR99: ${activeP.filter(p=>getReportOvr(p)===99).length}
+OVR100: ${activeP.filter(p=>getReportOvr(p)>=100).length}
+AGE35+: ${activeP.filter(p=>getReportAge(p)>=35).length}
+AGE40+: ${activeP.filter(p=>getReportAge(p)>=40).length}
+
+JOB POPULATION:
+${jobPopulation}
+POSITION POPULATION: FRONT ${frontPop} / BACK ${backPop}
+
+TEAM POWER / STARTING FIVE:
+${teamPowerLines.map((x,i)=>`${i+1}. ${x.team.name} [${x.team.tier}] W-L ${x.wl} / ROSTER AVG ${x.rosterAvg.toFixed(1)} / START5 AVG ${x.fiveAvg.toFixed(1)} / F-B ${x.f}-${x.b} / ${x.jobs}`).join('\n')}
+
+TEAM STATS:
+TEAM ELIM TOTAL: ${teamElimTotal}
+TEAM KILL TOTAL: ${teamKillTotal}
+ELIM/KILL RATIO: ${elimKillRatio}
+TEAM ASSIST TOTAL: ${teamAssistTotal}
+ASSIST/KILL RATIO: ${assistKillRatio}
+TEAM PREV TOTAL: ${teamPrevTotal}
+
+ELIM TOP 5:
+${compact(topList('elim'))}
+
+DMG TOP 5:
+${compact(topList('dmg'))}
+
+PREV TOP 5:
+${compact(topList('prev'))}
+
+SOLO STATS:
+TOTAL MATCHES: ${Math.floor(soloMatchesTotal)}
+KO WINS: ${soloKoWinsTotal}
+DECISION WINS: ${soloDecisionWinsTotal}
+KO RATE: ${soloKoRate}%
+
+SOLO JOB STATS (CAREER):
+${JOBS.map(j => {
+  const list = players.filter(p => p.job === j);
+  const w = list.reduce((n,p)=>n+(p.careerStats?.solo?.w||0),0);
+  const l = list.reduce((n,p)=>n+(p.careerStats?.solo?.l||0),0);
+  const rate = (w+l)>0 ? (w/(w+l)*100).toFixed(1) : '0.0';
+  return `${j}: ${w}-${l} / WIN ${rate}%`;
+}).join('\n')}
+
+INDIVIDUAL CHAMPIONSHIP
+${tourneyInfo}
+
+PAST CHAMPIONS
+${champStr || 'None'}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert("REPORTをクリップボードにコピーしました。");
+  }).catch(() => {
+    alert("コピーに失敗しました。");
+  });
+}
+
+
+// ==========================================
+// V31.8 AUTO BALANCE TEST
+// ==========================================
+function balanceMean(a) { return a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0; }
+function balanceCorr(xs, ys) {
+  if (xs.length < 2 || xs.length !== ys.length) return 0;
+  const mx=balanceMean(xs), my=balanceMean(ys);
+  let n=0, dx=0, dy=0;
+  for(let i=0;i<xs.length;i++){ const a=xs[i]-mx,b=ys[i]-my; n+=a*b; dx+=a*a; dy+=b*b; }
+  return dx&&dy ? n/Math.sqrt(dx*dy) : 0;
+}
+function balanceStatus(value, greenFn, yellowFn) {
+  if (greenFn(value)) return ['🟢','PASS'];
+  if (yellowFn(value)) return ['🟡','WATCH'];
+  return ['🔴','FAIL'];
+}
+function restoreBalanceSnapshot(s) {
+  currentSeason=s.currentSeason; seasonPhase=s.seasonPhase; teams=s.teams; players=s.players;
+  draftProspects=s.draftProspects; matchSchedule=s.matchSchedule; currentMatchIndex=s.currentMatchIndex;
+  lastSeasonStandings=s.lastSeasonStandings; leagueSnapshots=s.leagueSnapshots;
+  retiredCountThisSeason=s.retiredCountThisSeason; releasedCountThisSeason=s.releasedCountThisSeason;
+  championshipHistory=s.championshipHistory; leagueRecords=s.leagueRecords;
+  statsSortCol=s.statsSortCol; statsSortAsc=s.statsSortAsc; statsCompactMode=s.statsCompactMode;
+  draftSortCol=s.draftSortCol; draftSortAsc=s.draftSortAsc; draftState=s.draftState;
+  players.forEach(ensureStatShape); restoreTournamentState(s.tournamentState);
+}
+function autoDraftBalanceTest() {
+  const pt=teams.find(t=>t.isPlayer);
+  const best = () => draftProspects.filter(p=>p.draftStatus==='AVAILABLE')
+    .sort((a,b)=>evaluateProspectForTeam(pt.id,b)-evaluateProspectForTeam(pt.id,a))[0];
+  let guard=0;
+  while (draftState.phase !== 'FINISHED' && guard++ < 12) {
+    if (['USER_PICK_1','FALLBACK_USER_1','WAIVER_2'].includes(draftState.phase)) {
+      const p=best(); if(!p) break; selectUserDraftPick(p.id);
+    } else if (draftState.phase === 'FINISHED') break;
+    else processNextFallbackOrRound2();
+  }
+}
+function healerBandLabel(ovr) {
+  if (ovr < 70) return '65-69';
+  if (ovr < 75) return '70-74';
+  if (ovr < 80) return '75-79';
+  if (ovr < 85) return '80-84';
+  return '85+';
+}
+function addHealerDirectSample(acc, a, b, winnerSide) {
+  if (!a || !b || Math.abs(a.ovr-b.ovr) > 2 || a.hc === b.hc) return;
+  const ca=a.hc===0?'0H':a.hc===1?'1H':'2H+';
+  const cb=b.hc===0?'0H':b.hc===1?'1H':'2H+';
+  const order={'0H':0,'1H':1,'2H+':2};
+  const low=order[ca] < order[cb] ? ca : cb, high=low===ca?cb:ca;
+  const key=`${low} vs ${high}`;
+  if (!acc.healerDirect[key]) acc.healerDirect[key]={lowW:0,highW:0,d:0,g:0};
+  const x=acc.healerDirect[key]; x.g++;
+  if (winnerSide===0) x.d++;
+  else {
+    const winnerClass=winnerSide===1?ca:cb;
+    if (winnerClass===low) x.lowW++; else x.highW++;
+  }
+}
+function runOneBalanceSeason(acc, targetSeason) {
+  // V31.9.2: 各試合直前の実スタメンを記録し、START5 OVR差±2以内の
+  // 0H/1H/2H+直接対決を集計。クラブTier/戦力差による見かけのヒーラー勝率を切り分ける。
+  while (currentMatchIndex < matchSchedule.length) {
+    const m=matchSchedule[currentMatchIndex];
+    if (m?.type==='TEAM') {
+      const ta=teams.find(t=>t.id===m.t1), tb=teams.find(t=>t.id===m.t2);
+      const fa=getLegalStartingFive(ta,true), fb=getLegalStartingFive(tb,true);
+      const a={hc:fa.filter(p=>p.job==='ヒーラー').length,ovr:balanceMean(fa.map(p=>p.ovr))};
+      const b={hc:fb.filter(p=>p.job==='ヒーラー').length,ovr:balanceMean(fb.map(p=>p.ovr))};
+      const wa=ta.teamWins||0, wb=tb.teamWins||0;
+      runNextMatch(true);
+      const winner=(ta.teamWins||0)>wa?1:(tb.teamWins||0)>wb?2:0;
+      addHealerDirectSample(acc,a,b,winner);
+    } else runNextMatch(true);
+  }
+  const standings=calculateTeamStandings();
+  const rankById=new Map(standings.map((x,i)=>[x.teamId,i+1]));
+  teams.forEach(t=>{
+    const five=getLegalStartingFive(t,true); const hc=five.filter(p=>p.job==='ヒーラー').length;
+    const games=(t.teamWins||0)+(t.teamLosses||0)+(t.teamDraws||0);
+    const wr=games?(t.teamWins||0)/games:0;
+    acc.teamSamples.push({tier:t.tier,wr,rank:rankById.get(t.id),startOvr:balanceMean(five.map(p=>p.ovr)),hc});
+    const bucket=hc===0?'h0':hc===1?'h1':'h2'; acc.healer[bucket].w+=(t.teamWins||0); acc.healer[bucket].g+=games;
+    const band=healerBandLabel(balanceMean(five.map(p=>p.ovr)));
+    if (!acc.healerBands[band]) acc.healerBands[band]={h0:{w:0,g:0},h1:{w:0,g:0},h2:{w:0,g:0}};
+    acc.healerBands[band][bucket].w+=(t.teamWins||0); acc.healerBands[band][bucket].g+=games;
+  });
+  const champTeam=teams.find(t=>t.id===standings[0]?.teamId); if(champTeam) acc.tierChamps[champTeam.tier]=(acc.tierChamps[champTeam.tier]||0)+1;
+  // 64-player tournament: player club also auto-select top 4.
+  const parts=[]; teams.forEach(t=>players.filter(p=>p.active&&p.teamId===t.id).sort((a,b)=>b.ovr-a.ovr).slice(0,4).forEach(p=>parts.push(p)));
+  setupTournament(parts);
+  while (!tournamentState.champion) runNextTourneyRound(true,true);
+  if (tournamentState.champion) acc.soloChamps[tournamentState.champion.job]=(acc.soloChamps[tournamentState.champion.job]||0)+1;
+  if (targetSeason) {
+    const ap=players.filter(p=>p.active); acc.final.push({
+      avgOvr:balanceMean(ap.map(p=>p.ovr)), avgAge:balanceMean(ap.map(p=>p.age)),
+      o80:ap.filter(p=>p.ovr>=80).length,o85:ap.filter(p=>p.ovr>=85).length,o90:ap.filter(p=>p.ovr>=90).length,o95:ap.filter(p=>p.ovr>=95).length,o100:ap.filter(p=>p.ovr>=100).length,
+      front:ap.filter(p=>FRONT_JOBS.includes(p.job)).length, back:ap.filter(p=>BACK_JOBS.includes(p.job)).length,
+      jobs:Object.fromEntries(JOBS.map(j=>[j,ap.filter(p=>p.job===j).length]))
+    });
+    JOBS.forEach(j=>{ const ps=ap.filter(p=>p.job===j); let w=0,l=0; ps.forEach(p=>{w+=p.careerStats.solo.w||0;l+=p.careerStats.solo.l||0}); acc.solo[j].w+=w;acc.solo[j].l+=l; });
+  }
+  processSeasonEnd(); autoDraftBalanceTest();
+}
+function copyBalanceTestResult() {
+  if (!latestBalanceTestText) {
+    alert('まだBALANCE TEST結果がありません。先にFAST TESTかSTANDARDを実行してください。');
+    return;
+  }
+  const done = () => alert('BALANCE TEST結果をクリップボードにコピーしました。');
+  const fail = () => alert('コピーに失敗しました。');
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(latestBalanceTestText).then(done).catch(fail);
+  else {
+    try {
+      const ta=document.createElement('textarea'); ta.value=latestBalanceTestText; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.focus(); ta.select(); const ok=document.execCommand('copy'); ta.remove(); ok?done():fail();
+    } catch(e) { fail(); }
+  }
+}
+
+async function runBalanceTest(worlds=20,seasons=5) {
+  if (balanceTestMode) return;
+  const status=document.getElementById('balanceTestStatus'), out=document.getElementById('balanceTestResult');
+  if (!status||!out) return;
+  const snapshot=JSON.parse(JSON.stringify(buildSaveData()));
+  // V31.9.1: テスト前のlocalStorage内容も退避。テスト中に想定外の保存経路が走っても復元する。
+  const preTestStoredSave = localStorage.getItem(SAVE_KEY);
+  const acc={final:[],teamSamples:[],healer:{h0:{w:0,g:0},h1:{w:0,g:0},h2:{w:0,g:0}},healerBands:{},healerDirect:{},tierChamps:{},soloChamps:{},solo:Object.fromEntries(JOBS.map(j=>[j,{w:0,l:0}]))};
+  const started=performance.now(); balanceTestMode=true; fastSimulationMode=true;
+  try {
+    for(let w=0;w<worlds;w++){
+      initGame();
+      for(let s=1;s<=seasons;s++) runOneBalanceSeason(acc,s===seasons);
+      if (w%5===4 || w===worlds-1) { status.textContent=`検証中… ${w+1}/${worlds} worlds`; await new Promise(r=>setTimeout(r,0)); }
+    }
+  } catch(e) { console.error(e); out.innerHTML=`<div style="color:var(--loss-color)">TEST ERROR: ${e.message}</div>`; }
+  finally {
+    restoreBalanceSnapshot(snapshot);
+    // 通常セーブをテスト開始前の状態へ完全復元。
+    try {
+      if (preTestStoredSave === null) localStorage.removeItem(SAVE_KEY);
+      else localStorage.setItem(SAVE_KEY, preTestStoredSave);
+    } catch(e) { console.warn('BALANCE TEST save restore failed', e); }
+    balanceTestMode=false; fastSimulationMode=false; restorePhaseUI(); updateUI();
+  }
+  const f=acc.final, avgOvr=balanceMean(f.map(x=>x.avgOvr)), avgAge=balanceMean(f.map(x=>x.avgAge));
+  const o80=balanceMean(f.map(x=>x.o80)),o85=balanceMean(f.map(x=>x.o85)),o90=balanceMean(f.map(x=>x.o90)),o95=balanceMean(f.map(x=>x.o95));
+  const front=balanceMean(f.map(x=>x.front)),back=balanceMean(f.map(x=>x.back)); const frontPct=100*front/(front+back);
+  const corr=balanceCorr(acc.teamSamples.map(x=>x.startOvr),acc.teamSamples.map(x=>x.wr));
+  const hwr=k=>acc.healer[k].g?100*acc.healer[k].w/acc.healer[k].g:0;
+  const tierWr=t=>100*balanceMean(acc.teamSamples.filter(x=>x.tier===t).map(x=>x.wr));
+  const rows=[]; const add=(name,val,st)=>rows.push(`<tr><td>${name}</td><td>${val}</td><td>${st[0]} ${st[1]}</td></tr>`);
+  add('平均OVR',avgOvr.toFixed(1),balanceStatus(avgOvr,v=>v>=70&&v<=73,v=>v>=69&&v<=74));
+  add('OVR80+ / 85+ / 90+ / 95+',`${o80.toFixed(1)} / ${o85.toFixed(1)} / ${o90.toFixed(1)} / ${o95.toFixed(1)}`,balanceStatus(o90,v=>v>=1&&v<=5,v=>v>=0&&v<=8));
+  add('平均年齢',avgAge.toFixed(1),balanceStatus(avgAge,v=>v>=26&&v<=29,v=>v>=25&&v<=30));
+  add('FRONT / BACK',`${front.toFixed(1)} / ${back.toFixed(1)} (${frontPct.toFixed(1)}% FRONT)`,balanceStatus(frontPct,v=>v>=45&&v<=55,v=>v>=42&&v<=58));
+  add('START5 OVR→勝率 相関',corr.toFixed(3),balanceStatus(corr,v=>v>=.65&&v<.90,v=>v>=.50));
+  const h0=hwr('h0'),h1=hwr('h1'),h2=hwr('h2'); const hd=Math.abs(h1-h0),h2d=Math.abs(h2-h1);
+  add('0H / 1H / 2H+ 勝率',`${h0.toFixed(1)}% / ${h1.toFixed(1)}% / ${h2.toFixed(1)}%`,balanceStatus(Math.max(hd,h2d),v=>hd<=10&&h2d<=5,v=>hd<=15&&h2d<=10));
+  JOBS.forEach(j=>{const x=acc.solo[j],wr=(x.w+x.l)?100*x.w/(x.w+x.l):0;add(`SOLO ${j}`,`${wr.toFixed(1)}% (${x.w}-${x.l})`,balanceStatus(wr,v=>v>=45&&v<=55,v=>v>=40&&v<=60));});
+  // V31.12: 初期クラブ戦力差を微調整。BALANCE SCORE基準はV31.11を維持。
+  // V31.11: クラブ格差をBALANCE SCOREへ正式反映。
+  // 強豪そのものは許容するが、ELITEがほぼ全勝・優勝独占する状態はPASSにしない。
+  const tierTargets={ELITE:[65,80,55,88],STRONG:[55,70,48,78],MID:[40,60,32,68],LOW:[25,45,18,52],PLAYER:[20,40,12,48]};
+  ['ELITE','STRONG','MID','LOW','PLAYER'].forEach(t=>{
+    const wr=tierWr(t),q=tierTargets[t];
+    add(`TIER ${t} 平均勝率`,`${wr.toFixed(1)}%`,balanceStatus(wr,v=>v>=q[0]&&v<=q[1],v=>v>=q[2]&&v<=q[3]));
+  });
+  const totalTeamChamps=Object.values(acc.tierChamps).reduce((a,b)=>a+b,0);
+  const eliteChampShare=totalTeamChamps?100*(acc.tierChamps.ELITE||0)/totalTeamChamps:0;
+  add('ELITE 優勝占有率',`${eliteChampShare.toFixed(1)}%`,balanceStatus(eliteChampShare,v=>v>=40&&v<=60,v=>v>=30&&v<=70));
+  const fail=rows.filter(x=>x.includes('🔴')).length, watch=rows.filter(x=>x.includes('🟡')).length; const score=Math.max(0,100-fail*12-watch*4); const verdict=fail===0&&watch<=2?'PASS':fail<=1?'WATCH':'REVISE';
+  const jobAvg=JOBS.map(j=>`${j}:${balanceMean(f.map(x=>x.jobs[j])).toFixed(1)}`).join(' / ');
+  const tierText=['ELITE','STRONG','MID','LOW','PLAYER'].map(t=>`${t} ${tierWr(t).toFixed(1)}%`).join(' / ');
+  const soloLines=JOBS.map(j=>{const x=acc.solo[j],wr=(x.w+x.l)?100*x.w/(x.w+x.l):0;return `${j}: ${wr.toFixed(1)}% (${x.w}-${x.l})`;}).join('\n');
+  const healerSamples=`0H games ${acc.healer.h0.g} / 1H games ${acc.healer.h1.g} / 2H+ games ${acc.healer.h2.g}`;
+  const bandOrder=['65-69','70-74','75-79','80-84','85+'];
+  const bandLines=bandOrder.map(b=>{
+    const x=acc.healerBands[b];
+    if(!x) return `${b}: no samples`;
+    const wr=k=>x[k].g?100*x[k].w/x[k].g:0;
+    return `${b}: 0H ${wr('h0').toFixed(1)}% (g${x.h0.g}) / 1H ${wr('h1').toFixed(1)}% (g${x.h1.g}) / 2H+ ${wr('h2').toFixed(1)}% (g${x.h2.g})`;
+  }).join('\n');
+  const directKeys=['0H vs 1H','0H vs 2H+','1H vs 2H+'];
+  const directLines=directKeys.map(k=>{
+    const x=acc.healerDirect[k]; if(!x||!x.g) return `${k}: no samples`;
+    const [low,high]=k.split(' vs '); const decided=x.lowW+x.highW;
+    const lw=decided?100*x.lowW/decided:0, hw=decided?100*x.highW/decided:0; return `${k} (START5 OVR diff <=2): ${low} ${lw.toFixed(1)}% / ${high} ${hw.toFixed(1)}% / games ${x.g} / draws ${x.d}`;
+  }).join('\n');
+  latestBalanceTestText=`FANTASY ARENA BALANCE TEST
+BUILD: ${BUILD_ID}
+MODE: ${worlds===20&&seasons===5?'FAST':worlds===100&&seasons===10?'STANDARD':'CUSTOM'}
+WORLDS: ${worlds}
+SEASONS: ${seasons}
+BALANCE SCORE: ${score}/100
+VERDICT: ${verdict}
+TIME: ${((performance.now()-started)/1000).toFixed(1)} sec
+
+CORE:
+AVG OVR: ${avgOvr.toFixed(1)}
+OVR80+: ${o80.toFixed(1)}
+OVR85+: ${o85.toFixed(1)}
+OVR90+: ${o90.toFixed(1)}
+OVR95+: ${o95.toFixed(1)}
+AVG AGE: ${avgAge.toFixed(1)}
+FRONT/BACK: ${front.toFixed(1)} / ${back.toFixed(1)} (${frontPct.toFixed(1)}% FRONT)
+START5 OVR-WIN CORR: ${corr.toFixed(3)}
+
+HEALER META:
+0H WIN: ${h0.toFixed(1)}%
+1H WIN: ${h1.toFixed(1)}%
+2H+ WIN: ${h2.toFixed(1)}%
+${healerSamples}
+
+HEALER META BY START5 OVR BAND:
+${bandLines}
+
+HEALER DIRECT MATCHUPS (OVR-CONTROLLED):
+${directLines}
+
+SOLO JOB WIN RATE:
+${soloLines}
+
+TIER AVG WIN RATE:
+${tierText}
+ELITE CHAMP SHARE: ${eliteChampShare.toFixed(1)}%
+
+FINAL JOB POP AVG:
+${jobAvg}
+
+TEAM CHAMPIONS BY TIER:
+${JSON.stringify(acc.tierChamps)}
+
+SOLO CHAMPIONS BY JOB:
+${JSON.stringify(acc.soloChamps)}`;
+  out.innerHTML=`<div class="debug-grid"><div class="debug-card"><div class="debug-card-title">BALANCE SCORE</div>${score}/100</div><div class="debug-card"><div class="debug-card-title">判定</div>${verdict}</div><div class="debug-card"><div class="debug-card-title">TEST</div>${worlds} worlds × ${seasons} seasons</div><div class="debug-card"><div class="debug-card-title">TIME</div>${((performance.now()-started)/1000).toFixed(1)} sec</div></div><div class="table-container" style="margin-top:10px"><table><thead><tr><th>CHECK</th><th>RESULT</th><th>JUDGE</th></tr></thead><tbody>${rows.join('')}</tbody></table></div><div style="margin-top:10px;font-size:.82rem"><b>Tier平均勝率:</b> ${tierText}<br><b>最終職人口平均:</b> ${jobAvg}<br><b>OVR補正ヒーラー直接対決:</b><br>${directLines.replaceAll('\n','<br>')}<br><b>優勝Tier:</b> ${JSON.stringify(acc.tierChamps)}<br><b>SOLO優勝職:</b> ${JSON.stringify(acc.soloChamps)}</div>`;
+  status.textContent=`完了: ${worlds} worlds × ${seasons} seasons。ゲームデータ復元済み。「COPY TEST RESULT」で検証結果をコピーできます。`;
+}
+
+// ==========================================
+// UI RENDERERS & PLAYER DETAIL MODAL
+// ==========================================
+function switchTab(tabId) {
+  if (balanceTestMode) return;
+  document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  
+  document.getElementById(tabId).classList.add('active');
+  if (event && event.target) event.target.classList.add('active');
+
+  if (tabId === 'debugReport') renderDebugReport();
+
+  renderStatsTable();
+  renderDraftTable();
+  renderMyRoster();
+}
+
+function updateUI() {
+  if (balanceTestMode) return;
+  players.forEach(ensureStatShape);
+  let phaseText = 'レギュラーシーズン (5vs5 団体戦)';
+  if (seasonPhase === 'TOURNAMENT_SELECT') phaseText = '個人闘技選手権 (代表選出中)';
+  if (seasonPhase === 'TOURNAMENT_PLAY') phaseText = '個人闘技選手権 (トーナメント進行中)';
+  if (seasonPhase === 'DRAFT') phaseText = 'ドラフト会議';
+
+  document.getElementById('seasonDisplay').textContent = `第${currentSeason}シーズン - ${phaseText}`;
+
+  const myTeam = teams.find(t => t.isPlayer);
+  const myP = players.filter(p => p.teamId === myTeam.id && p.active);
+  ensureFinanceState();
+  const myPayroll = getTeamPayroll(myTeam.id);
+  let dashHtml = `<p style="margin-bottom:8px;"><strong>${myTeam.name}</strong> (所属選手: ${myP.length}名)</p>`;
+  dashHtml += `<p style="font-size:0.85rem;color:var(--text-sub);margin-bottom:8px;">資金 <strong style="color:var(--accent-gold);">${formatMoney(myTeam.balance)}</strong> / 年俸総額 ${formatMoney(myPayroll)} / 前季収支 ${myTeam.lastProfit>=0?'+':''}${formatMoney(myTeam.lastProfit)}</p><ul>`;
+  myP.forEach(p => {
+    dashHtml += `<li>${p.name} (${p.job}) - OVR: <span class="ovr-tag">${p.ovr}</span> / Pot: <span class="badge badge-pot-${p.potential}">${p.potential}</span></li>`;
+  });
+  dashHtml += `</ul>`;
+  document.getElementById('dashMyClubInfo').innerHTML = dashHtml;
+
+  renderStandings();
+  renderMyRoster();
+  renderDraftTable();
+
+  // 高速AUTO中は途中保存せず、完了時に1回だけ保存する。
+  if (!fastSimulationMode) saveGameState(false);
+}
+
+function calculateTeamStandings() {
+  const standings = teams.map(t => {
+    const w = t.teamWins || 0;
+    const l = t.teamLosses || 0;
+    const d = t.teamDraws || 0;
+    const total = w + l + d;
+    const rate = total > 0 ? (w / total).toFixed(3) : '.000';
+    return { teamId: t.id, name: t.name, w, l, d, rate };
+  });
+  standings.sort((a,b) => b.rate - a.rate || b.w - a.w);
+  return standings;
+}
+
+function renderStandings() {
+  const teamSt = calculateTeamStandings();
+  let html = '';
+  teamSt.forEach((s, i) => {
+    html += `<tr><td>${i+1}</td><td>${s.name}</td><td>${s.w}</td><td>${s.l}</td><td>${s.d}</td><td>${s.rate}</td></tr>`;
+  });
+  document.getElementById('teamStandingsBody').innerHTML = html;
+}
+
+function renderStatsTable() {
+  const type = document.getElementById('statsType').value;
+  const clubFilter = document.getElementById('filterClub').value;
+  const jobFilter = document.getElementById('filterJob').value;
+
+  const clubSel = document.getElementById('filterClub');
+  if (clubSel.children.length === 1) {
+    teams.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id; opt.textContent = t.name;
+      clubSel.appendChild(opt);
+    });
+  }
+
+  let list = players.filter(p => p.active);
+  if (clubFilter !== 'ALL') list = list.filter(p => p.teamId === clubFilter);
+  if (jobFilter !== 'ALL') list = list.filter(p => p.job === jobFilter);
+
+  const isCareer = type.startsWith('career');
+  const isTeam = type.endsWith('team');
+
+  const getStatVal = (p, col) => {
+    if (col === 'name' || col === 'job' || col === 'race') return p[col] || '';
+    if (col === 'club') {
+      const t = teams.find(x => x.id === p.teamId);
+      return t ? t.name : '-';
+    }
+    if (col === 'ovr' || col === 'age') return p[col] || 0;
+
+    const st = isCareer ? (isTeam ? p.careerStats.team : p.careerStats.solo) 
+                        : (isTeam ? p.seasonStats.team : p.seasonStats.solo);
+    if (!st) return 0;
+
+    if (col === 'winRate') return st.m > 0 ? (st.w / st.m) : 0;
+    if (col === 'avgDmg')  return st.m > 0 ? (st.dmg / st.m) : 0;
+    if (col === 'avgHeal') return st.m > 0 ? (st.heal / st.m) : 0;
+    
+    return st[col] || 0;
+  };
+
+  list.sort((a, b) => {
+    const valA = getStatVal(a, statsSortCol);
+    const valB = getStatVal(b, statsSortCol);
+
+    if (typeof valA === 'string' || typeof valB === 'string') {
+      return statsSortAsc ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+    }
+    return statsSortAsc ? valA - valB : valB - valA;
+  });
+
+  const headers = [
+    { id: 'name', label: '名前' },
+    { id: 'club', label: '所属' },
+    { id: 'age', label: '年齢' },
+    { id: 'job', label: 'ジョブ' },
+    { id: 'ovr', label: 'OVR' },
+    { id: 'm', label: '試合' },
+    { id: 'w', label: '勝' },
+    { id: 'l', label: '負' },
+    { id: 'winRate', label: '勝率' },
+    { id: 'elim', label: 'ELIM' },
+    { id: 'dmg', label: 'DMG' },
+    { id: 'avgDmg', label: 'AVG DMG' },
+    { id: 'kill', label: 'KILL' },
+    { id: 'assist', label: 'ASSIST' },
+    { id: 'maxDmg', label: 'MAX HIT' },
+    { id: 'bestDmg', label: 'BEST DMG' },
+    { id: 'prev', label: 'PREV' },
+    { id: 'guard', label: 'GUARD' },
+    { id: 'eva', label: 'EVA' },
+    { id: 'heal', label: 'HEAL' },
+    { id: 'avgHeal', label: 'AVG HEAL' }
+  ];
+
+  let headHtml = '';
+  headers.forEach(h => {
+    const arrow = statsSortCol === h.id ? (statsSortAsc ? ' ▲' : ' ▼') : '';
+    headHtml += `<th onclick="sortStats('${h.id}')">${h.label}${arrow}</th>`;
+  });
+  document.getElementById('statsHeader').innerHTML = headHtml;
+
+  let bodyHtml = '';
+  list.forEach(p => {
+    const t = teams.find(x => x.id === p.teamId);
+    const clubName = t ? t.name : '-';
+    const st = isCareer ? (isTeam ? p.careerStats.team : p.careerStats.solo) 
+                        : (isTeam ? p.seasonStats.team : p.seasonStats.solo);
+
+    const winRate = st.m > 0 ? (st.w / st.m).toFixed(3) : '.000';
+    const avgDmg  = st.m > 0 ? (st.dmg / st.m).toFixed(1) : '0.0';
+    const avgHeal = st.m > 0 ? (st.heal / st.m).toFixed(1) : '0.0';
+
+    bodyHtml += `<tr>
+      <td style="color:var(--accent-blue);cursor:pointer;" onclick="openPlayerModal('${p.id}')">${p.name}</td>
+      <td>${clubName}</td>
+      <td>${p.age}</td>
+      <td>${p.job}</td>
+      <td class="ovr-tag">${p.ovr}</td>
+      <td>${st.m}</td>
+      <td>${st.w}</td>
+      <td>${st.l}</td>
+      <td>${winRate}</td>
+      <td>${st.elim || 0}</td>
+      <td>${st.dmg}</td>
+      <td>${avgDmg}</td>
+      <td>${st.kill}</td>
+      <td>${st.assist}</td>
+      <td>${st.maxDmg}</td>
+      <td>${st.bestDmg || 0}</td>
+      <td>${st.prev || 0}</td>
+      <td>${st.guard || 0}</td>
+      <td>${st.eva || 0}</td>
+      <td>${st.heal}</td>
+      <td>${avgHeal}</td>
+    </tr>`;
+  });
+  document.getElementById('statsBody').innerHTML = bodyHtml;
+}
+
+function sortStats(col) {
+  if (statsSortCol === col) {
+    statsSortAsc = !statsSortAsc;
+  } else {
+    statsSortCol = col;
+    statsSortAsc = false;
+  }
+  renderStatsTable();
+}
+
+function toggleStatsCompact() {
+  statsCompactMode = !statsCompactMode;
+  const statsSection = document.getElementById('stats');
+  const btn = document.getElementById('btnStatsCompact');
+  if (statsSection) statsSection.classList.toggle('stats-compact', statsCompactMode);
+  if (btn) btn.textContent = statsCompactMode ? '通常表示' : 'COMPACT表示';
+}
+
+function getCurrentStatsRowsForExport() {
+  const type = document.getElementById('statsType').value;
+  const clubFilter = document.getElementById('filterClub').value;
+  const jobFilter = document.getElementById('filterJob').value;
+
+  let list = players.filter(p => p.active);
+  if (clubFilter !== 'ALL') list = list.filter(p => p.teamId === clubFilter);
+  if (jobFilter !== 'ALL') list = list.filter(p => p.job === jobFilter);
+
+  const isCareer = type.startsWith('career');
+  const isTeam = type.endsWith('team');
+
+  const statFor = p => isCareer
+    ? (isTeam ? p.careerStats.team : p.careerStats.solo)
+    : (isTeam ? p.seasonStats.team : p.seasonStats.solo);
+
+  const valueForSort = (p, col) => {
+    if (col === 'name' || col === 'job' || col === 'race') return p[col] || '';
+    if (col === 'club') {
+      const t = teams.find(x => x.id === p.teamId);
+      return t ? t.name : '-';
+    }
+    if (col === 'ovr' || col === 'age') return p[col] || 0;
+
+    const st = statFor(p);
+    if (!st) return 0;
+    if (col === 'winRate') return st.m > 0 ? st.w / st.m : 0;
+    if (col === 'avgDmg') return st.m > 0 ? st.dmg / st.m : 0;
+    if (col === 'avgHeal') return st.m > 0 ? st.heal / st.m : 0;
+    return st[col] || 0;
+  };
+
+  list.sort((a, b) => {
+    const aVal = valueForSort(a, statsSortCol);
+    const bVal = valueForSort(b, statsSortCol);
+    if (typeof aVal === 'string' || typeof bVal === 'string') {
+      return statsSortAsc
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    }
+    return statsSortAsc ? aVal - bVal : bVal - aVal;
+  });
+
+  return { type, clubFilter, jobFilter, list, statFor };
+}
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function copyStatsReport() {
+  players.forEach(ensureStatShape);
+
+  const { type, clubFilter, jobFilter, list, statFor } = getCurrentStatsRowsForExport();
+  const typeSelect = document.getElementById('statsType');
+  const clubSelect = document.getElementById('filterClub');
+  const jobSelect = document.getElementById('filterJob');
+
+  const typeLabel = typeSelect.options[typeSelect.selectedIndex]?.text || type;
+  const clubLabel = clubSelect.options[clubSelect.selectedIndex]?.text || clubFilter;
+  const jobLabel = jobSelect.options[jobSelect.selectedIndex]?.text || jobFilter;
+  const sortLabel = `${statsSortCol} ${statsSortAsc ? 'ASC' : 'DESC'}`;
+
+  const headers = [
+    'NAME','CLUB','AGE','JOB','OVR','GP','W','L','D','WIN%',
+    'ELIM','DMG','AVG_DMG','KILL','ASSIST','MAX_HIT','BEST_DMG',
+    'PREV','GUARD','EVA','HEAL','AVG_HEAL'
+  ];
+
+  const rows = list.map(p => {
+    const t = teams.find(x => x.id === p.teamId);
+    const st = statFor(p) || resetStatObj();
+    const winRate = st.m > 0 ? ((st.w / st.m) * 100).toFixed(1) : '0.0';
+    const avgDmg = st.m > 0 ? (st.dmg / st.m).toFixed(1) : '0.0';
+    const avgHeal = st.m > 0 ? (st.heal / st.m).toFixed(1) : '0.0';
+
+    return [
+      p.name,
+      t ? t.name : '-',
+      getReportAge(p),
+      p.job,
+      getReportOvr(p),
+      st.m || 0,
+      st.w || 0,
+      st.l || 0,
+      st.d || 0,
+      winRate,
+      st.elim || 0,
+      st.dmg || 0,
+      avgDmg,
+      st.kill || 0,
+      st.assist || 0,
+      st.maxDmg || 0,
+      st.bestDmg || 0,
+      st.prev || 0,
+      st.guard || 0,
+      st.eva || 0,
+      st.heal || 0,
+      avgHeal
+    ].join('\t');
+  });
+
+  const text = [
+    'FANTASY ARENA STATS REPORT',
+    `BUILD: ${BUILD_ID}`,
+    `SEASON: ${currentSeason}`,
+    `VIEW: ${typeLabel}`,
+    `CLUB FILTER: ${clubLabel}`,
+    `JOB FILTER: ${jobLabel}`,
+    `SORT: ${sortLabel}`,
+    `PLAYERS: ${list.length}`,
+    '',
+    headers.join('\t'),
+    ...rows
+  ].join('\n');
+
+  copyTextWithFallback(text).then(() => {
+    alert(`STATSをコピーしました（${list.length}選手）。`);
+  }).catch(() => {
+    alert('STATSのコピーに失敗しました。SafariでGitHub PagesのURLから開いて再度お試しください。');
+  });
+}
+
+function renderMyRoster() {
+  const myTeam = teams.find(t => t.isPlayer);
+  const myP = players.filter(p => p.teamId === myTeam.id && p.active);
+  ensureFinanceState();
+  const payroll = getTeamPayroll(myTeam.id);
+  const fin = document.getElementById('clubFinanceSummary');
+  if (fin) {
+    const profitSign = myTeam.lastProfit >= 0 ? '+' : '';
+    fin.innerHTML = `
+      <div class="debug-card"><div class="debug-card-title">保有資金</div><strong>${formatMoney(myTeam.balance)}</strong></div>
+      <div class="debug-card"><div class="debug-card-title">年俸総額</div><strong>${formatMoney(payroll)}</strong></div>
+      <div class="debug-card"><div class="debug-card-title">前季収入</div><strong>${formatMoney(myTeam.lastRevenue)}</strong></div>
+      <div class="debug-card"><div class="debug-card-title">前季収支</div><strong>${profitSign}${formatMoney(myTeam.lastProfit)}</strong></div>`;
+  }
+
+  let html = '';
+  myP.forEach(p => {
+    const checked = p.selectedForTeamMatch ? 'checked' : '';
+    const pendingText = p.retirementPending ? '<span style="color:var(--lose-color);font-weight:bold;">引退勧告中</span>' : '現役';
+
+    html += `<tr>
+      <td><input type="checkbox" ${checked} onchange="toggleTeamSelection('${p.id}')"></td>
+      <td style="color:var(--accent-blue);cursor:pointer;" onclick="openPlayerModal('${p.id}')">${p.name}</td>
+      <td>${p.age}</td>
+      <td>${p.race}</td>
+      <td>${p.job}</td>
+      <td class="ovr-tag">${p.ovr}</td>
+      <td>${formatMoney(p.salary)}</td>
+      <td><span class="badge badge-pot-${p.potential}">${p.potential}</span></td>
+      <td>${p.pow}</td><td>${p.def}</td><td>${p.sta}</td><td>${p.spd}</td><td>${p.tec}</td><td>${p.int}</td>
+      <td>${pendingText}</td>
+    </tr>`;
+  });
+  document.getElementById('myRosterBody').innerHTML = html;
+}
+
+function toggleTeamSelection(pId) {
+  const p = players.find(x => x.id === pId);
+  if (!p) return;
+
+  const myTeam = teams.find(t => t.isPlayer);
+  const roster = players.filter(x => x.teamId === myTeam.id && x.active);
+  const selected = roster.filter(x => x.selectedForTeamMatch);
+
+  if (!p.selectedForTeamMatch && selected.length >= 5) {
+    alert("5vs5団体戦に出場できるメンバーは5名までです。前衛2・後衛2・FREE1で編成してください。");
+    renderMyRoster();
+    return;
+  }
+
+  p.selectedForTeamMatch = !p.selectedForTeamMatch;
+  const after = roster.filter(x => x.selectedForTeamMatch);
+  if (after.length === 5) {
+    const front = after.filter(x => getPositionGroup(x.job) === 'FRONT').length;
+    const back = after.length - front;
+    if (front < 2 || back < 2) {
+      p.selectedForTeamMatch = !p.selectedForTeamMatch;
+      alert(`編成条件を満たしていません。前衛2人・後衛2人が必須で、残り1枠は自由です。\n現在: 前衛${front} / 後衛${back}`);
+    }
+  }
+  renderMyRoster();
+}
+
+function renderDraftTable() {
+  if (seasonPhase !== 'DRAFT') {
+    document.getElementById('draftProspectsBody').innerHTML = '<tr><td colspan="8">現在ドラフト期間ではありません。</td></tr>';
+    document.getElementById('draftControlPanel').innerHTML = '';
+    return;
+  }
+
+  const raceFilter = document.getElementById('draftFilterRace').value;
+  const jobFilter = document.getElementById('draftFilterJob').value;
+
+  let list = draftProspects.filter(p => p.draftStatus === 'AVAILABLE');
+  if (raceFilter !== 'ALL') list = list.filter(p => p.race === raceFilter);
+  if (jobFilter !== 'ALL') list = list.filter(p => p.job === jobFilter);
+
+  list.sort((a, b) => {
+    let valA = a[draftSortCol];
+    let valB = b[draftSortCol];
+    if (draftSortCol === 'potential') {
+      const order = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+      valA = order[a.potential] || 0;
+      valB = order[b.potential] || 0;
+    }
+    if (typeof valA === 'string' || typeof valB === 'string') {
+      return draftSortAsc ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+    }
+    return draftSortAsc ? valA - valB : valB - valA;
+  });
+
+  let html = '';
+  list.forEach(p => {
+    let btnText = '指名';
+    let btnDisabled = false;
+
+    if (draftState.phase === 'USER_PICK_1') btnText = '1巡目希望指名';
+    else if (draftState.phase === 'FALLBACK_USER_1') btnText = '外れ1位指名';
+    else if (draftState.phase === 'WAIVER_2') btnText = '2巡目指名';
+    else { btnText = '指名不可'; btnDisabled = true; }
+
+    html += `<tr>
+      <td style="color:var(--accent-blue);cursor:pointer;" onclick="openPlayerModal('${p.id}')">${p.name}</td>
+      <td>${p.age}</td>
+      <td>${p.race}</td>
+      <td>${p.job}</td>
+      <td class="ovr-tag">${p.ovr}</td>
+      <td><span class="badge badge-pot-${p.potential}">${p.potential}</span></td>
+      <td>${p.background} / ${p.title}</td>
+      <td><button class="btn" style="padding:4px 8px;font-size:0.75rem;" ${btnDisabled?'disabled':''} onclick="selectUserDraftPick('${p.id}')">${btnText}</button></td>
+    </tr>`;
+  });
+  document.getElementById('draftProspectsBody').innerHTML = html || '<tr><td colspan="8">指名可能な候補選手がいません。</td></tr>';
+
+  let ctrlHtml = '';
+  if (draftState.phase === 'USER_PICK_1') {
+    ctrlHtml = `<span>ステータス: <strong>1巡目指名選手を選択してください</strong></span>`;
+  } else if (draftState.phase === 'FALLBACK_USER_1') {
+    ctrlHtml = `<span>ステータス: <strong>外れ1位指名選手を選択してください</strong></span>`;
+  } else if (draftState.phase === 'WAIVER_2') {
+    ctrlHtml = `<span>ステータス: <strong>2巡目指名選手を選択してください</strong></span>`;
+  } else if (draftState.phase === 'FINISHED') {
+    ctrlHtml = `<span>ステータス: <strong>ドラフト会議終了</strong></span>`;
+  }
+  document.getElementById('draftControlPanel').innerHTML = ctrlHtml;
+}
+
+function sortDraft(col) {
+  if (draftSortCol === col) {
+    draftSortAsc = !draftSortAsc;
+  } else {
+    draftSortCol = col;
+    draftSortAsc = col === 'age';
+  }
+  renderDraftTable();
+}
+
+function openPlayerModal(pId) {
+  const p = players.find(x => x.id === pId) || draftProspects.find(x => x.id === pId);
+  if (!p) return;
+
+  const t = teams.find(x => x.id === p.teamId);
+  const teamName = t ? t.name : (p.draftStatus === 'AVAILABLE' ? '無所属 (ドラフト候補)' : '引退');
+
+  const stats = [
+    { name: 'POW', val: p.pow },
+    { name: 'DEF', val: p.def },
+    { name: 'STA', val: p.sta },
+    { name: 'SPD', val: p.spd },
+    { name: 'TEC', val: p.tec },
+    { name: 'INT', val: p.int }
+  ];
+
+  let statRows = '';
+  stats.forEach(s => {
+    const rank = getStatRank(s.val);
+    const pct = Math.min(100, Math.max(0, (s.val / 99) * 100));
+    statRows += `
+      <div class="stat-row">
+        <span class="stat-name">${s.name}</span>
+        <span class="stat-rank stat-rank-${rank}">${rank}</span>
+        <span class="stat-val">${s.val}</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar-fill" style="width:${pct}%;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  const cTeam = p.careerStats.team;
+  const cSolo = p.careerStats.solo;
+  const sTeam = p.seasonStats.team;
+  const sSolo = p.seasonStats.solo;
+
+  let historyHtml = '<ul>';
+  if (p.draftHistory) {
+    historyHtml += `<li>第${p.draftHistory.season}期 ドラフト${p.draftHistory.round}巡目 (${p.draftHistory.teamName}) 指名入団</li>`;
+  }
+  p.careerHistory.forEach(h => {
+    historyHtml += `<li>${h}</li>`;
+  });
+  historyHtml += '</ul>';
+
+  const modalContent = `
+    <div class="detail-header">
+      <div class="detail-title">
+        <h2>${p.name}</h2>
+        <p>${teamName} / ${p.age}歳 / ${p.race} / ${p.job}</p>
+        <p style="margin-top:4px;">肩書き: ${p.title} (${p.background})</p>
+      </div>
+      <div class="detail-ovr-box">
+        <div class="detail-ovr-val">${p.ovr}</div>
+        <div class="detail-ovr-lbl">OVR</div>
+      </div>
+    </div>
+
+    <div class="stat-category">
+      <div class="stat-category-title">BASE ABILITIES</div>
+      ${statRows}
+    </div>
+
+    <div class="stat-category">
+      <div class="stat-category-title">POTENTIAL & TITLES</div>
+      <p style="font-size:0.85rem;">Potential: <span class="badge badge-pot-${p.potential}">${p.potential}</span></p>
+      <p style="font-size:0.85rem; margin-top:4px;">個人選手権 優勝回数: <strong>${p.titles ? p.titles.individualChampion : 0}</strong> 回</p>
+      <p style="font-size:0.85rem; margin-top:4px;">撃破王: <strong>${p.titles ? (p.titles.elimLeader || 0) : 0}</strong> / 守護王: <strong>${p.titles ? (p.titles.prevLeader || 0) : 0}</strong> / DMG王: <strong>${p.titles ? (p.titles.dmgLeader || 0) : 0}</strong> / 回復王: <strong>${p.titles ? (p.titles.healLeader || 0) : 0}</strong></p>
+    </div>
+
+    <div class="stat-category">
+      <div class="stat-category-title">SEASON STATS (今季)</div>
+      <p style="font-size:0.8rem; font-family:monospace;">団体戦: ${sTeam.m}試 ${sTeam.w}勝${sTeam.l}敗 ELIM:${sTeam.elim||0} DMG:${sTeam.dmg} K:${sTeam.kill} A:${sTeam.assist} PREV:${sTeam.prev||0} GUARD:${sTeam.guard||0} EVA:${sTeam.eva||0} HEAL:${sTeam.heal}</p>
+      <p style="font-size:0.8rem; font-family:monospace;">個人戦: ${sSolo.m}試 ${sSolo.w}勝${sSolo.l}敗 ${sSolo.kill}K DMG:${sSolo.dmg}</p>
+    </div>
+
+    <div class="stat-category">
+      <div class="stat-category-title">CAREER STATS (通算)</div>
+      <p style="font-size:0.8rem; font-family:monospace;">団体戦: ${cTeam.m}試 ${cTeam.w}勝${cTeam.l}敗 ELIM:${cTeam.elim||0} DMG:${cTeam.dmg} K:${cTeam.kill} A:${cTeam.assist} PREV:${cTeam.prev||0} GUARD:${cTeam.guard||0} EVA:${cTeam.eva||0} HEAL:${cTeam.heal}</p>
+      <p style="font-size:0.8rem; font-family:monospace;">個人戦: ${cSolo.m}試 ${cSolo.w}勝${cSolo.l}敗 ${cSolo.kill}K DMG:${cSolo.dmg}</p>
+    </div>
+
+    <div class="stat-category">
+      <div class="stat-category-title">CAREER HISTORY</div>
+      <div style="font-size:0.8rem; max-height:100px; overflow-y:auto;">${historyHtml}</div>
+    </div>
+  `;
+
+  document.getElementById('modalBody').innerHTML = modalContent;
+  document.getElementById('playerModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('playerModal').classList.remove('active');
+}
+
+// ==========================================
+// ON LOAD INITIALIZATION
+// ==========================================
+window.onload = function() {
+  // V31.6.1: 現行セーブを残したまま旧バージョンのセーブキーだけ整理。
+  cleanupLegacyFantasySaves();
+  // 保存があれば自動復帰。なければ新規ゲーム開始。
+  if (!loadGameState(false)) {
+    initGame();
+    saveGameState(false);
+  }
+};
+
+window.addEventListener('pagehide', () => { if (!balanceTestMode) saveGameState(false); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && !balanceTestMode) saveGameState(false);
+});
+</script>
+</body>
+</html>
