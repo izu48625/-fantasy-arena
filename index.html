@@ -449,7 +449,7 @@
     <button class="btn btn-gold" id="btnStartTourney" onclick="startTournamentPhase()" style="display:none;grid-column:1/-1;">個人闘技選手権を開幕</button>
   </div>
   <details class="dashboard-save">
-    <summary>ゲーム管理 <span class="build-mini">V36.9</span> <span id="saveStatus" style="font-size:.72rem;color:var(--text-sub);font-weight:normal;">AUTO SAVE: ON</span></summary>
+    <summary>ゲーム管理 <span class="build-mini">V36.10</span> <span id="saveStatus" style="font-size:.72rem;color:var(--text-sub);font-weight:normal;">AUTO SAVE: ON</span></summary>
     <div class="controls"><button class="btn" onclick="manualSaveGame()">SAVE</button><button class="btn" onclick="manualLoadGame()">LOAD</button><button class="btn" onclick="newGameWithConfirm()">NEW GAME</button></div>
   </details>
   <div class="dashboard-home-stack">
@@ -822,7 +822,7 @@
 // CONSTANTS & CONFIGURATIONS
 // ==========================================
 const TEAM_BATTLE_MAX_TURNS = 24;
-const BUILD_ID = 'ROSTER10_16TEAM_POS221_V36_9_TEAM_ELIM_ROLE_TUNE';
+const BUILD_ID = 'ROSTER10_16TEAM_POS221_V36_10_FULL_PERFORMANCE_DIAGNOSTIC';
 const TRAINING_POINTS_PER_SEASON = 6; // Lv3基準。実際のTPは訓練所Lvで決定
 const TRAINING_FACILITY_TP = {1:4,2:5,3:6,4:7,5:8};
 const TRAINING_FACILITY_UPGRADE_COST = {1:6000,2:12000,3:25000,4:50000};
@@ -5556,14 +5556,27 @@ function collectMutationSamples(acc){
 }
 function collectElimDiagnosticSeason(acc){
   if(!acc.elimDiag) acc.elimDiag={players:[],top10:[]};
+  if(!acc.performanceDiag) acc.performanceDiag={players:[],top10:{}};
   const active=players.filter(p=>p.active && (p.seasonStats?.team?.m||0)>0);
   const rows=active.map(p=>{
     const st=p.seasonStats.team, skills=getPlayerSkills(p), games=st.m||0;
-    return {job:p.job,ovr:p.ovr,games,elim:st.elim||0,dmg:st.dmg||0,elim30:games?((st.elim||0)*30/games):0,
-      skillNames:skills.map(x=>x.name),skillRanks:skills.map(x=>x.rank)};
+    const per30=v=>games?((Number(v)||0)*30/games):0;
+    return {
+      job:p.job,ovr:p.ovr,games,
+      elim:st.elim||0,kill:st.kill||0,assist:st.assist||0,dmg:st.dmg||0,heal:st.heal||0,guard:st.guard||0,prev:st.prev||0,eva:st.eva||0,
+      maxHit:st.maxDmg||0,bestDmg:st.bestDmg||0,
+      elim30:per30(st.elim),kill30:per30(st.kill),assist30:per30(st.assist),dmg30:per30(st.dmg),heal30:per30(st.heal),guard30:per30(st.guard),prev30:per30(st.prev),eva30:per30(st.eva),
+      skillNames:skills.map(x=>x.name),skillRanks:skills.map(x=>x.rank)
+    };
   });
   acc.elimDiag.players.push(...rows);
   rows.slice().sort((a,b)=>b.elim30-a.elim30 || b.dmg-a.dmg).slice(0,10).forEach(x=>acc.elimDiag.top10.push(x));
+  acc.performanceDiag.players.push(...rows);
+  const defs=[['DMG','dmg30'],['KILL','kill30'],['ASSIST','assist30'],['MAX HIT','maxHit'],['HEAL','heal30'],['GUARD','guard30'],['PREV','prev30'],['EVA','eva30']];
+  defs.forEach(([label,key])=>{
+    if(!acc.performanceDiag.top10[label]) acc.performanceDiag.top10[label]=[];
+    rows.slice().sort((a,b)=>(b[key]||0)-(a[key]||0) || b.ovr-a.ovr).slice(0,10).forEach(x=>acc.performanceDiag.top10[label].push(x));
+  });
 }
 function formatElimDiagnostics(acc){
   const ed=acc.elimDiag||{players:[],top10:[]}, rows=ed.players||[];
@@ -5584,6 +5597,45 @@ function formatElimDiagnostics(acc){
   }).join('\n');
   return `ELIM PERFORMANCE DIAGNOSTIC (ALL SEASON PLAYER-SAMPLES):\nELIM TOP10 SAMPLE AVG OVR: ${topAvgOvr.toFixed(1)}\nELIM TOP10 SAMPLE OVR<75: ${topLow}/${top.length}\nELIM TOP10 SAMPLE JOBS: ${topJob}\n\nOVR BAND AVG ELIM/30:\n${byBand}\n\nJOB AVG ELIM/30:\n${byJob}\n\nASSASSIN SKILL SPLIT (ELIM/30):\n${skillLines}`;
 }
+function formatFullPerformanceDiagnostics(acc){
+  const pd=acc.performanceDiag||{players:[],top10:{}}, rows=pd.players||[];
+  const avg=a=>a.length?numericMean(a):0;
+  const band=o=>o<70?'<70':o<75?'70-74':o<80?'75-79':o<85?'80-84':o<90?'85-89':'90+';
+  const bands=['<70','70-74','75-79','80-84','85-89','90+'];
+  const defs=[
+    {label:'DMG',key:'dmg30',unit:'/30'},
+    {label:'KILL',key:'kill30',unit:'/30'},
+    {label:'ASSIST',key:'assist30',unit:'/30'},
+    {label:'MAX HIT',key:'maxHit',unit:''},
+    {label:'HEAL',key:'heal30',unit:'/30'},
+    {label:'GUARD',key:'guard30',unit:'/30'},
+    {label:'PREV',key:'prev30',unit:'/30'},
+    {label:'EVA',key:'eva30',unit:'/30'}
+  ];
+  const lines=['FULL PERFORMANCE DIAGNOSTIC (ALL SEASON PLAYER-SAMPLES):'];
+  defs.forEach(d=>{
+    const top=(pd.top10?.[d.label]||[]), positiveTop=top.filter(x=>(x[d.key]||0)>0);
+    const topUse=positiveTop.length?positiveTop:top;
+    lines.push('',`[${d.label}] JOB AVG${d.unit}:`);
+    lines.push(JOBS.map(j=>{
+      const r=rows.filter(x=>x.job===j);
+      return `${j}: ${avg(r.map(x=>x[d.key]||0)).toFixed(1)} (OVR ${avg(r.map(x=>x.ovr)).toFixed(1)} / n${r.length})`;
+    }).join(' / '));
+    lines.push(`${d.label} TOP10 SAMPLE AVG OVR: ${avg(topUse.map(x=>x.ovr)).toFixed(1)}`);
+    lines.push(`${d.label} TOP10 SAMPLE OVR<75: ${topUse.filter(x=>x.ovr<75).length}/${topUse.length}`);
+    lines.push(`${d.label} TOP10 SAMPLE JOBS: ${JOBS.map(j=>`${j}:${topUse.filter(x=>x.job===j).length}`).join(' / ')}`);
+    lines.push(`${d.label} OVR BAND AVG${d.unit}: ${bands.map(b=>{const r=rows.filter(x=>band(x.ovr)===b);return `${b} ${avg(r.map(x=>x[d.key]||0)).toFixed(1)} (n${r.length})`;}).join(' / ')}`);
+  });
+  lines.push('', 'ROLE IDENTITY QUICK CHECK:');
+  const jobAvg=(job,key)=>avg(rows.filter(x=>x.job===job).map(x=>x[key]||0));
+  lines.push(`DMG: ${JOBS.map(j=>`${j} ${jobAvg(j,'dmg30').toFixed(0)}`).join(' / ')}`);
+  lines.push(`HEAL: ${JOBS.map(j=>`${j} ${jobAvg(j,'heal30').toFixed(0)}`).join(' / ')}`);
+  lines.push(`GUARD: ${JOBS.map(j=>`${j} ${jobAvg(j,'guard30').toFixed(1)}`).join(' / ')}`);
+  lines.push(`PREV: ${JOBS.map(j=>`${j} ${jobAvg(j,'prev30').toFixed(0)}`).join(' / ')}`);
+  lines.push(`ASSIST: ${JOBS.map(j=>`${j} ${jobAvg(j,'assist30').toFixed(1)}`).join(' / ')}`);
+  return lines.join('\n');
+}
+
 function runOneBalanceSeason(acc, targetSeason) {
   // 0H/1H/2H+直接対決を集計。クラブTier/戦力差による見かけのヒーラー勝率を切り分ける。
   while (currentMatchIndex < matchSchedule.length) {
@@ -5648,7 +5700,7 @@ async function runBalanceTest(worlds=20,seasons=5) {
   if (!status||!out) return;
   const snapshot=JSON.parse(JSON.stringify(buildSaveData()));
   const preTestStoredSave = localStorage.getItem(SAVE_KEY);
-  const acc={skillSamples:[],final:[],teamSamples:[],healer:{h0:{w:0,g:0},h1:{w:0,g:0},h2:{w:0,g:0}},healerBands:{},healerDirect:{},tierChamps:{},soloChamps:{},soloParticipants:Object.fromEntries(JOBS.map(j=>[j,0])),solo:Object.fromEntries(JOBS.map(j=>[j,{w:0,l:0}])),soloControl:Object.fromEntries(JOBS.map(j=>[j,{w:0,g:0}])),soloControlMatchups:{},mutations:{},elimDiag:{players:[],top10:[]}};
+  const acc={skillSamples:[],final:[],teamSamples:[],healer:{h0:{w:0,g:0},h1:{w:0,g:0},h2:{w:0,g:0}},healerBands:{},healerDirect:{},tierChamps:{},soloChamps:{},soloParticipants:Object.fromEntries(JOBS.map(j=>[j,0])),solo:Object.fromEntries(JOBS.map(j=>[j,{w:0,l:0}])),soloControl:Object.fromEntries(JOBS.map(j=>[j,{w:0,g:0}])),soloControlMatchups:{},mutations:{},elimDiag:{players:[],top10:[]},performanceDiag:{players:[],top10:{}}};
   const started=performance.now(); balanceTestMode=true; fastSimulationMode=true;
   try {
     for(let w=0;w<worlds;w++){
@@ -5775,6 +5827,8 @@ SOLO CONTROL MATCHUPS:
 ${soloControlMatchupLines}
 
 ${formatElimDiagnostics(acc)}
+
+${formatFullPerformanceDiagnostics(acc)}
 
 SKILL SYSTEM (FINAL 100Y SNAPSHOT AVG):
 AVG SKILLS / PLAYER: ${numericMean(acc.skillSamples.map(x=>x.avgSkills)).toFixed(2)}
