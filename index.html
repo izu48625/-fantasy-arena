@@ -40093,3 +40093,289 @@ body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy .v37ux-
 }
 </style>
 
+
+
+<style id="phase22-ui17-market-draft-contract-final">
+/* ============================================================
+   UI-17 — MARKET / DRAFT / CONTRACT V2 FINAL
+   Readability and mobile decision flow only.
+   Market values, draft logic, transfer AI and contracts unchanged.
+   ============================================================ */
+
+/* ---------- RECRUITMENT HUB ---------- */
+body.phase22-ui-v1 #clubManagePanel-market .p228-recruitment-head{
+  border-radius:7px!important;
+  overflow:hidden!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-market-tab{
+  min-height:43px!important;
+  font-size:.52rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-market-tab.active{
+  color:#efd17d!important;
+  background:#25313d!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-section-head strong{
+  font-size:.73rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-filter-row select{
+  min-height:36px!important;
+  font-size:.47rem!important;
+}
+
+/* FA / CONTRACT cards: money and status should dominate. */
+body.phase22-ui-v1 #clubManagePanel-market .p228-fa-card,
+body.phase22-ui-v1 #clubManagePanel-market .p228-contract-card{
+  border-radius:6px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-player-main strong{
+  font-size:.67rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-player-main small{
+  font-size:.41rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-card-metrics small{
+  font-size:.30rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-card-metrics strong{
+  font-size:.47rem!important;
+  line-height:1.15!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-fa-card .p228-card-metrics:first-of-type>div:nth-child(3) strong{
+  color:#e1c477!important;
+  font-weight:900!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-contract-card.expiring{
+  background:#1d2022!important;
+  border-color:#a47e42!important;
+  box-shadow:inset 4px 0 0 #c09247!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-contract-state{
+  min-height:20px!important;
+  padding:3px 6px!important;
+  font-size:.34rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-contract-state.expiring{
+  color:#f0cf7d!important;
+  border-color:#a88042!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-card-actions .btn{
+  min-height:39px!important;
+  font-size:.47rem!important;
+}
+
+/* TRADE: team switching becomes a clean horizontal club strip. */
+body.phase22-ui-v1 #clubManagePanel-market .trade-center-clubs{
+  display:flex!important;
+  gap:5px!important;
+  overflow-x:auto!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-width:none!important;
+  margin:0 0 7px!important;
+  padding:1px 1px 4px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .trade-center-clubs::-webkit-scrollbar{
+  display:none!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .trade-club-chip{
+  flex:0 0 auto!important;
+  min-height:35px!important;
+  min-width:104px!important;
+  max-width:160px!important;
+  padding:5px 8px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  border:1px solid #3c4b5a!important;
+  background:#151f29!important;
+  color:#aeb9c4!important;
+  font-family:inherit!important;
+  font-size:.43rem!important;
+  font-weight:850!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .trade-club-chip.active{
+  color:#efd17d!important;
+  border-color:#a78347!important;
+  background:#2a2b25!important;
+  box-shadow:inset 0 -2px 0 #bd934b!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .trade-target-card{
+  border-radius:6px!important;
+  border-color:#3b4958!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-trade-main strong,
+body.phase22-ui-v1 #clubManagePanel-market .p228-trade-main .player-name-link{
+  font-size:.63rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-trade-action .p228-trade-ovr{
+  font-size:.88rem!important;
+}
+body.phase22-ui-v1 #clubManagePanel-market .p228-trade-action .btn{
+  min-height:34px!important;
+  font-size:.42rem!important;
+}
+
+/* ---------- DRAFT WAR ROOM ---------- */
+body.phase22-ui-v1 #draft .p227-war-room{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+body.phase22-ui-v1 #draft .grid-2>div:first-child>.controls select{
+  min-height:41px!important;
+  font-size:.54rem!important;
+}
+body.phase22-ui-v1 #draft .p227-prospect{
+  border-radius:7px!important;
+  padding:10px 9px 9px!important;
+}
+body.phase22-ui-v1 #draft .p227-prospect.scouted{
+  border-left-width:4px!important;
+}
+body.phase22-ui-v1 #draft .p227-name{
+  font-size:.70rem!important;
+}
+body.phase22-ui-v1 #draft .p227-meta{
+  font-size:.50rem!important;
+}
+body.phase22-ui-v1 #draft .p227-score{
+  align-self:stretch!important;
+  justify-content:center!important;
+  padding-left:7px!important;
+  border-left:1px solid #33414f!important;
+}
+body.phase22-ui-v1 #draft .p227-ovr small,
+body.phase22-ui-v1 #draft .p227-pot small{
+  font-size:.34rem!important;
+}
+body.phase22-ui-v1 #draft .p227-ovr strong{
+  font-size:.84rem!important;
+}
+body.phase22-ui-v1 #draft .p227-pot strong{
+  font-size:.61rem!important;
+}
+body.phase22-ui-v1 #draft .p227-intel-chip{
+  min-height:20px!important;
+  font-size:.40rem!important;
+}
+body.phase22-ui-v1 #draft .p227-actions{
+  gap:6px!important;
+  margin-top:4px!important;
+}
+body.phase22-ui-v1 #draft .p227-actions .btn{
+  min-height:39px!important;
+  font-size:.47rem!important;
+}
+body.phase22-ui-v1 #draft .p227-actions .p227-pick{
+  font-size:.49rem!important;
+  box-shadow:inset 0 -2px 0 rgba(92,61,21,.25)!important;
+}
+
+/* Important status / money cells use a consistent hierarchy. */
+body.phase22-ui-v1 #draft .p227-overview-cell.scout strong,
+body.phase22-ui-v1 #draft .p227-overview-cell.money strong{
+  font-weight:900!important;
+}
+body.phase22-ui-v1 #draft #draftLog{
+  border-radius:5px!important;
+}
+
+/* ---------- MOBILE FINAL ---------- */
+@media(max-width:700px){
+  body.phase22-ui-v1 #clubManagePanel-market .p228-recruitment-copy strong{
+    font-size:.72rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-overview-cell{
+    padding:8px 6px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-overview-cell small{
+    font-size:.33rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-overview-cell strong{
+    font-size:.56rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-fa-card,
+  body.phase22-ui-v1 #clubManagePanel-market .p228-contract-card{
+    padding:9px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-fa-card-top,
+  body.phase22-ui-v1 #clubManagePanel-market .p228-contract-card-top{
+    grid-template-columns:44px minmax(0,1fr) 54px!important;
+    gap:8px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-fa-card .arena-avatar,
+  body.phase22-ui-v1 #clubManagePanel-market .p228-contract-card .arena-avatar{
+    width:42px!important;
+    height:48px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-card-metrics>div{
+    padding:7px 4px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-card-actions{
+    grid-template-columns:.72fr 1.28fr!important;
+    gap:6px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-card-actions .btn{
+    min-height:42px!important;
+    font-size:.49rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .trade-club-chip{
+    min-width:118px!important;
+    min-height:38px!important;
+    font-size:.45rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .trade-target-card{
+    grid-template-columns:42px minmax(0,1fr) 58px!important;
+    padding:9px!important;
+  }
+
+  body.phase22-ui-v1 #draft .p227-prospect{
+    grid-template-columns:44px minmax(0,1fr) 66px!important;
+    gap:8px!important;
+  }
+  body.phase22-ui-v1 #draft .p227-avatar .arena-avatar{
+    width:40px!important;
+    height:46px!important;
+  }
+  body.phase22-ui-v1 #draft .p227-title{
+    font-size:.41rem!important;
+  }
+  body.phase22-ui-v1 #draft .p227-actions{
+    grid-template-columns:.72fr .82fr 1.46fr!important;
+  }
+  body.phase22-ui-v1 #draft #draftLog{
+    height:160px!important;
+    min-height:160px!important;
+  }
+}
+
+@media(max-width:390px){
+  body.phase22-ui-v1 #clubManagePanel-market .p228-market-tab{
+    min-height:41px!important;
+    font-size:.46rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-player-main strong{
+    font-size:.62rem!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-market .p228-card-metrics strong{
+    font-size:.43rem!important;
+  }
+  body.phase22-ui-v1 #draft .p227-prospect{
+    grid-template-columns:40px minmax(0,1fr) 62px!important;
+    padding:9px 7px 8px!important;
+  }
+  body.phase22-ui-v1 #draft .p227-name{
+    font-size:.64rem!important;
+  }
+  body.phase22-ui-v1 #draft .p227-meta{
+    font-size:.45rem!important;
+  }
+  body.phase22-ui-v1 #draft .p227-ovr strong{
+    font-size:.76rem!important;
+  }
+  body.phase22-ui-v1 #draft .p227-actions .btn{
+    min-height:38px!important;
+    font-size:.43rem!important;
+  }
+}
+</style>
+
