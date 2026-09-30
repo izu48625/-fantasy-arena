@@ -39440,9 +39440,9 @@ body.phase22-ui-v1 #clubManagePanel-legends .p22-legend-quick .btn{min-height:37
     if(!hero)return;
     let box=hero.querySelector('.p22-records-summary');
     if(!box){box=document.createElement('div');box.className='p22-records-summary';hero.appendChild(box);}
-    const awardYears=Array.isArray(window.seasonAwardsHistory)?seasonAwardsHistory.length:0;
-    const hof=Array.isArray(window.players)?players.filter(p=>p?.hallOfFame).length:0;
-    const legends=Array.isArray(window.legendRegistry)?legendRegistry.length:0;
+    const awardYears=(typeof seasonAwardsHistory!=='undefined'&&Array.isArray(seasonAwardsHistory))?seasonAwardsHistory.length:0;
+    const hof=(typeof players!=='undefined'&&Array.isArray(players))?players.filter(p=>p?.hallOfFame).length:0;
+    const legends=(typeof legendRegistry!=='undefined'&&Array.isArray(legendRegistry))?legendRegistry.length:0;
     box.innerHTML=`<div><small>AWARD YEARS</small><strong>${awardYears}</strong></div><div><small>HALL OF FAME</small><strong>${hof}</strong></div><div><small>CLUB LEGENDS</small><strong>${legends}</strong></div>`;
     let actions=hero.querySelector('.p22-records-actions');
     if(!actions){actions=document.createElement('div');actions.className='p22-records-actions';hero.appendChild(actions);}
@@ -39460,17 +39460,17 @@ body.phase22-ui-v1 #clubManagePanel-legends .p22-legend-quick .btn{min-height:37
   function enhanceRecords(){
     recordsSummary();
     const body=document.getElementById('recordsBody');if(!body)return;
-    if(window.recordsMode==='awards'){
+    if((typeof recordsMode!=='undefined'?recordsMode:'')==='awards'){
       const note=[...body.querySelectorAll('.finance-debug-note')].find(x=>/MVP基準|BEST 5基準/.test(x.textContent||''));
       wrapNoteAsDetails(note,'年間表彰の選考基準');
       if(!body.querySelector('.p22-awards-actionbar')){
-        const rows=Array.isArray(window.seasonAwardsHistory)?[...seasonAwardsHistory].sort((a,b)=>(Number(b.season)||0)-(Number(a.season)||0)):[];
+        const rows=(typeof seasonAwardsHistory!=='undefined'&&Array.isArray(seasonAwardsHistory))?[...seasonAwardsHistory].sort((a,b)=>(Number(b.season)||0)-(Number(a.season)||0)):[];
         const bar=document.createElement('div');bar.className='p22-awards-actionbar';
         bar.innerHTML=`<div><small>ANNUAL AWARDS ARCHIVE</small><strong>${rows.length?`${typeof formatYear==='function'?formatYear(rows[0].season):rows[0].season} 最新表彰`:'表彰記録なし'}</strong></div><button class="btn btn-gold" onclick="openAnnualAwardsCeremony()" ${rows.length?'':'disabled'}>表彰式を見る</button>`;
         body.prepend(bar);
       }
     }
-    if(window.recordsMode==='hof'){
+    if((typeof recordsMode!=='undefined'?recordsMode:'')==='hof'){
       const note=[...body.querySelectorAll('.finance-debug-note')].find(x=>/殿堂入り選考基準/.test(x.textContent||''));
       wrapNoteAsDetails(note,'殿堂入りの選考基準');
     }
@@ -40534,4 +40534,236 @@ body.phase22-ui-v1 #clubManagePanel-market .p228-contract-card{background:#151f2
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(ensureMarketStatusToggle,0),{once:true});else setTimeout(ensureMarketStatusToggle,0);
 })();
 </script>
+
+
+
+<style id="phase22-ui18-records-club-final">
+/* ============================================================
+   UI-18 — RECORDS / CLUB MANAGEMENT FINAL
+   Final Phase22 presentation pass. No gameplay logic changes.
+   ============================================================ */
+
+/* RECORDS — compact top, stronger readability */
+body.phase22-ui-v1 #records{
+  padding-bottom:112px!important;
+}
+body.phase22-ui-v1 #records .records-hero{
+  border-radius:8px!important;
+  padding:12px!important;
+}
+body.phase22-ui-v1 #records .records-hero h2{
+  font-size:1rem!important;
+}
+body.phase22-ui-v1 #records .records-hero p{
+  font-size:.56rem!important;
+  line-height:1.45!important;
+}
+body.phase22-ui-v1 #records .p22-records-summary{
+  gap:5px!important;
+  margin-top:9px!important;
+}
+body.phase22-ui-v1 #records .p22-records-summary>div{
+  padding:7px 4px!important;
+  border-radius:5px!important;
+}
+body.phase22-ui-v1 #records .p22-records-summary small{
+  font-size:.34rem!important;
+}
+body.phase22-ui-v1 #records .p22-records-summary strong{
+  font-size:.76rem!important;
+}
+body.phase22-ui-v1 #records .p22-records-actions .btn,
+body.phase22-ui-v1 #records .records-tabs .btn,
+body.phase22-ui-v1 #records .p22-awards-actionbar .btn{
+  font-size:.57rem!important;
+  font-weight:900!important;
+}
+body.phase22-ui-v1 #records .award-grid>div{
+  border-radius:5px!important;
+}
+body.phase22-ui-v1 #records .award-grid>div,
+body.phase22-ui-v1 #records .award-best5,
+body.phase22-ui-v1 #records .p22-record-detail-body{
+  color:#c8d2dc!important;
+}
+body.phase22-ui-v1 #records .record-row,
+body.phase22-ui-v1 #records .club-record-best-card,
+body.phase22-ui-v1 #records .club-record-group{
+  background:#141e28!important;
+  border-color:#354352!important;
+}
+body.phase22-ui-v1 #records .record-name,
+body.phase22-ui-v1 #records .record-value,
+body.phase22-ui-v1 #records .club-record-best-card .best-value,
+body.phase22-ui-v1 #records .club-record-best-card .best-label,
+body.phase22-ui-v1 #records .club-record-group>summary{
+  color:#edf2f6!important;
+  -webkit-text-fill-color:#edf2f6!important;
+}
+body.phase22-ui-v1 #records .record-name small,
+body.phase22-ui-v1 #records .club-record-best-card .best-meta,
+body.phase22-ui-v1 #records .club-rank-note{
+  color:#9eabb8!important;
+  -webkit-text-fill-color:#9eabb8!important;
+}
+
+/* LEGEND — eliminate remaining parchment/brown surfaces */
+body.phase22-ui-v1 #clubManagePanel-legends{
+  padding-bottom:112px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-hero,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-card,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-candidate,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-hero,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-section{
+  background:#141e28!important;
+  border-color:#3a4857!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-hero strong,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-main>strong,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-candidate strong,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-hero h2,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-section h3,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-stat b{
+  color:#edf2f6!important;
+  -webkit-text-fill-color:#edf2f6!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-hero small,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-main>small,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-candidate small,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-hero small,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-career,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-skills,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-stat small,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-limit-note{
+  color:#9eabb8!important;
+  -webkit-text-fill-color:#9eabb8!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-ovr strong,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-count b,
+body.phase22-ui-v1 #clubManagePanel-legends .legend-profile-ovr strong{
+  color:#e4c16b!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-tag{
+  color:#d9c58d!important;
+  background:#202820!important;
+  border-color:#655b3f!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .p22-legend-quick{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:6px!important;
+  margin:8px 0 10px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .p22-legend-quick .btn{
+  min-height:40px!important;
+  font-size:.56rem!important;
+  font-weight:900!important;
+}
+
+/* FINANCE / FACILITY — less vertical space, larger useful labels */
+body.phase22-ui-v1 #clubManagePanel-finance .p2211-kicker,
+body.phase22-ui-v1 #clubManagePanel-training .p2211-kicker,
+body.phase22-ui-v1 #clubManagePanel-manager .p2211-kicker{
+  margin-bottom:7px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-finance .p2211-facility-card{
+  padding:9px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-finance .p2211-facility-head{
+  padding-bottom:6px!important;
+  margin-bottom:6px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-finance .p2211-facility-effects{
+  margin-bottom:7px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-finance .p2211-facility-action .btn,
+body.phase22-ui-v1 #clubManagePanel-training .p2211-training-actions .btn,
+body.phase22-ui-v1 #clubManagePanel-manager .manager-actions .btn{
+  font-size:.56rem!important;
+  font-weight:900!important;
+}
+body.phase22-ui-v1 #clubManagePanel-finance .p2211-finance-more summary,
+body.phase22-ui-v1 #clubManagePanel-manager .v37-more summary{
+  font-size:.52rem!important;
+  font-weight:900!important;
+}
+
+/* MANAGER — current coach first, candidates compact but readable */
+body.phase22-ui-v1 #clubManagePanel-manager .manager-current-card{
+  margin-bottom:9px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-manager .manager-candidate-card{
+  background:#141e28!important;
+}
+body.phase22-ui-v1 #clubManagePanel-manager .manager-card-head strong{
+  color:#edf2f6!important;
+}
+body.phase22-ui-v1 #clubManagePanel-manager .manager-card-head small,
+body.phase22-ui-v1 #clubManagePanel-manager .manager-history,
+body.phase22-ui-v1 #clubManagePanel-manager .manager-skill span{
+  color:#9eabb8!important;
+}
+body.phase22-ui-v1 #clubManagePanel-manager .manager-tactic strong,
+body.phase22-ui-v1 #clubManagePanel-manager .manager-contract strong{
+  color:#e5ebf0!important;
+}
+body.phase22-ui-v1 #clubManagePanel-manager .manager-tactic small,
+body.phase22-ui-v1 #clubManagePanel-manager .manager-contract small{
+  color:#8796a5!important;
+}
+
+/* Mobile final */
+@media(max-width:700px){
+  body.phase22-ui-v1 #records .records-hero{
+    padding:10px!important;
+  }
+  body.phase22-ui-v1 #records .records-hero h2{
+    font-size:.91rem!important;
+  }
+  body.phase22-ui-v1 #records .records-hero p{
+    display:none!important;
+  }
+  body.phase22-ui-v1 #records .p22-records-summary{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  body.phase22-ui-v1 #records .p22-records-actions{
+    grid-template-columns:1fr 1fr!important;
+  }
+  body.phase22-ui-v1 #records .records-tabs .btn{
+    min-width:96px!important;
+    min-height:40px!important;
+    font-size:.56rem!important;
+  }
+  body.phase22-ui-v1 #records .award-grid{
+    grid-template-columns:1fr 1fr!important;
+  }
+
+  body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-hero{
+    padding:9px!important;
+    margin-bottom:8px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-seal{
+    width:44px!important;
+    height:44px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-card{
+    padding:8px!important;
+  }
+
+  body.phase22-ui-v1 #clubManagePanel-finance .p2211-overview,
+  body.phase22-ui-v1 #clubManagePanel-training .p2211-overview{
+    gap:5px!important;
+    margin-bottom:8px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-finance .p2211-metric,
+  body.phase22-ui-v1 #clubManagePanel-training .p2211-metric{
+    padding:7px 6px!important;
+  }
+  body.phase22-ui-v1 #clubManagePanel-manager .p2211-manager-summary{
+    gap:4px!important;
+    margin-bottom:8px!important;
+  }
+}
+</style>
 
