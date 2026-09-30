@@ -39839,3 +39839,40 @@ body.phase22-ui-v1 #playerModal .player-collapse-section>summary{
   }
 })();
 </script>
+
+
+<style id="phase22-player-profile-remove-hotfix">
+/* ============================================================
+   HOTFIX — PLAYER DETAIL: remove PROFILE panel (age/team/etc.)
+   Keep ability, growth, records. No logic changes.
+   ============================================================ */
+body.phase22-ui-v1 #playerModal .player-profile-panel{
+  display:none!important;
+}
+body.phase22-ui-v1 #playerModal .player-analysis-top{
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:8px!important;
+}
+body.phase22-ui-v1 #playerModal .player-analysis-top .player-visual-panel{
+  width:100%!important;
+}
+body.phase22-ui-v1 #playerModal .player-analysis-top .player-radar-svg{
+  max-width:260px!important;
+  margin:6px auto!important;
+}
+@media(max-width:700px){
+  body.phase22-ui-v1 #playerModal .player-analysis-top{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:6px!important;
+  }
+  body.phase22-ui-v1 #playerModal .player-analysis-top .player-radar-svg{
+    max-width:230px!important;
+  }
+}
+@media(max-width:390px){
+  body.phase22-ui-v1 #playerModal .player-analysis-top .player-radar-svg{
+    max-width:205px!important;
+  }
+}
+</style>
+
