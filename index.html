@@ -40031,3 +40031,65 @@ body.phase22-ui-v1 .v37c1-result-actions button{
 }
 </style>
 
+
+
+<style id="phase22-player-mental-restore-hotfix">
+/* ============================================================
+   HOTFIX — restore MENTAL / LOYALTY after PROFILE cleanup
+   Keep age/team/background/epithet profile rows hidden.
+   ============================================================ */
+body.phase22-ui-v1 #playerModal .player-profile-panel{
+  display:block!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.player-profile-title,
+body.phase22-ui-v1 #playerModal .player-profile-panel>.player-profile-list{
+  display:none!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy{
+  display:block!important;
+  margin:0!important;
+  padding:9px!important;
+  border:1px solid #3b4858!important;
+  background:#111923!important;
+  border-radius:7px!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy>strong{
+  display:block!important;
+  color:#e2c575!important;
+  font-size:.55rem!important;
+  letter-spacing:.08em!important;
+  margin-bottom:6px!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy .v37r9a-player-psy-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:5px!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy .v37r9a-player-psy-grid>div{
+  padding:6px!important;
+  background:#17222d!important;
+  border:1px solid #354250!important;
+  min-width:0!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy small{
+  color:#8f9daa!important;
+  font-size:.40rem!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy strong{
+  color:#eef2f6!important;
+  font-size:.56rem!important;
+}
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy .v37ux-mental-more{
+  grid-column:1/-1!important;
+  margin-top:5px!important;
+}
+@media(max-width:390px){
+  body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy{
+    padding:7px!important;
+  }
+}
+</style>
+
