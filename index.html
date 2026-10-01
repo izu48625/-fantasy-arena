@@ -34160,6 +34160,330 @@ body.phase22-ui-v1 .v37r9b3-match-card .v37r9b3-screen-actions{
   if(!install()) window.addEventListener('load',install,{once:true});
 })();
 </script>
+
+<style id="phase22-responsive-final-audit">
+/* ============================================================
+   PHASE22 — RESPONSIVE FINAL AUDIT
+   iPhone Safari / large iPhone / iPad / desktop presentation only.
+   No gameplay, save, battle, growth, market or AI logic changes.
+   ============================================================ */
+
+/* Persistent bottom navigation: Phase22 contrast + safe-area stability. */
+body.phase22-ui-v1 .arena-bottom-nav{
+  box-sizing:border-box!important;
+  background:rgba(10,17,24,.98)!important;
+  border-top:1px solid #465464!important;
+  box-shadow:0 -8px 24px rgba(0,0,0,.38)!important;
+  padding-bottom:env(safe-area-inset-bottom)!important;
+}
+body.phase22-ui-v1 .arena-bottom-nav button{
+  min-width:0!important;
+  min-height:58px!important;
+  padding:5px 2px 4px!important;
+  color:#bdc7d1!important;
+  font-size:.62rem!important;
+  font-weight:850!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.phase22-ui-v1 .arena-bottom-nav button.active{
+  background:#25313d!important;
+  color:#f0cb72!important;
+  box-shadow:inset 0 2px 0 #b88c45!important;
+}
+body.phase22-ui-v1 .arena-bottom-nav .nav-icon{
+  width:21px!important;
+  height:21px!important;
+  margin-bottom:2px!important;
+}
+
+/* OFF SEASON return dock: eliminate old brown-on-gold low contrast. */
+body.phase22-ui-v1 .offseason-return-dock{
+  box-sizing:border-box!important;
+  bottom:calc(66px + env(safe-area-inset-bottom))!important;
+  width:min(calc(100% - 18px),740px)!important;
+  min-height:48px!important;
+  padding:8px 11px!important;
+  border:1px solid #4a5968!important;
+  border-left:4px solid #c09247!important;
+  border-radius:8px!important;
+  background:rgba(18,27,37,.98)!important;
+  color:#edf2f6!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.40)!important;
+}
+body.phase22-ui-v1 .offseason-return-dock strong{
+  color:#f0cf78!important;
+  -webkit-text-fill-color:#f0cf78!important;
+  font-size:.70rem!important;
+  line-height:1.15!important;
+}
+body.phase22-ui-v1 .offseason-return-dock span{
+  color:#b7c2cc!important;
+  -webkit-text-fill-color:#b7c2cc!important;
+  font-size:.52rem!important;
+  line-height:1.25!important;
+}
+body.phase22-ui-v1 .offseason-return-dock:active{
+  background:#202d39!important;
+}
+
+/* Full-screen overlays: dynamic viewport + notch/home-indicator safety. */
+body.phase22-ui-v1 .modal-overlay,
+body.phase22-ui-v1 .game-dialog-overlay,
+body.phase22-ui-v1 .ceremony-overlay,
+body.phase22-ui-v1 .transaction-overlay,
+body.phase22-ui-v1 .awakening-overlay,
+body.phase22-ui-v1 .team-profile-overlay,
+body.phase22-ui-v1 .record-flash-overlay,
+body.phase22-ui-v1 .hof-overlay,
+body.phase22-ui-v1 .sky-battle-overlay{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding-top:max(6px,env(safe-area-inset-top))!important;
+  padding-bottom:max(6px,env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 .modal-content,
+body.phase22-ui-v1 .game-dialog-card,
+body.phase22-ui-v1 .ceremony-card,
+body.phase22-ui-v1 .transaction-card,
+body.phase22-ui-v1 .awakening-card,
+body.phase22-ui-v1 .team-profile-card,
+body.phase22-ui-v1 .record-flash-card,
+body.phase22-ui-v1 .hof-card{
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+
+/* Horizontal content: keep scrolling local instead of widening the whole page. */
+body.phase22-ui-v1 #tourneySelectionCard .table-container,
+body.phase22-ui-v1 #clubManagePanel-market .trade-center-clubs,
+body.phase22-ui-v1 .tourney-mobile-page-nav,
+body.phase22-ui-v1 #records .records-tabs,
+body.phase22-ui-v1 #skyArena .p22-sky-zone-tabs{
+  max-width:100%!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-x!important;
+  scrollbar-width:none!important;
+}
+body.phase22-ui-v1 #tourneySelectionCard .table-container::-webkit-scrollbar,
+body.phase22-ui-v1 #clubManagePanel-market .trade-center-clubs::-webkit-scrollbar,
+body.phase22-ui-v1 .tourney-mobile-page-nav::-webkit-scrollbar,
+body.phase22-ui-v1 #records .records-tabs::-webkit-scrollbar,
+body.phase22-ui-v1 #skyArena .p22-sky-zone-tabs::-webkit-scrollbar{
+  display:none!important;
+}
+
+/* Player detail: keep important values readable without restoring PROFILE. */
+body.phase22-ui-v1 #playerModal .player-key-metrics small{
+  font-size:.41rem!important;
+  color:#9eabb8!important;
+}
+body.phase22-ui-v1 #playerModal .player-key-metrics strong{
+  font-size:.62rem!important;
+}
+body.phase22-ui-v1 #playerModal .v37r9a-player-psy,
+body.phase22-ui-v1 #playerModal .player-profile-panel>.v37r9a-player-psy{
+  min-width:0!important;
+}
+body.phase22-ui-v1 #playerModal .v37r9a-player-psy small{
+  color:#9eabb8!important;
+  font-size:.43rem!important;
+}
+body.phase22-ui-v1 #playerModal .v37r9a-player-psy strong{
+  color:#edf2f6!important;
+  font-size:.58rem!important;
+}
+
+/* Decision buttons: preserve button dimensions, raise only label readability. */
+body.phase22-ui-v1 #clubManagePanel-market .p228-card-actions .btn,
+body.phase22-ui-v1 #clubManagePanel-market .p228-trade-action .btn,
+body.phase22-ui-v1 #draft .p227-actions .btn,
+body.phase22-ui-v1 #tourneySelectionCard>.controls .btn,
+body.phase22-ui-v1 #skyArena .p22-sky-candidate-actions .btn,
+body.phase22-ui-v1 .sky-battle-controls .btn,
+body.phase22-ui-v1 .v37r9b3-match-card .v37c3-command-btn{
+  font-size:.52rem!important;
+  font-weight:900!important;
+}
+
+/* Compact labels can stay small, but not at unreadable 0.2–0.3rem sizes. */
+body.phase22-ui-v1 #clubManagePanel-market .p228-card-metrics small,
+body.phase22-ui-v1 #draft .p227-ovr small,
+body.phase22-ui-v1 #draft .p227-pot small,
+body.phase22-ui-v1 #skyArena .p22-sky-candidate-ovr small,
+body.phase22-ui-v1 #skyArena .sky-floor-btn .sky-floor-state{
+  font-size:.36rem!important;
+}
+
+/* Records / offseason microcopy final readability. */
+body.phase22-ui-v1 #records .p22-records-summary small{
+  font-size:.40rem!important;
+}
+body.phase22-ui-v1 #offseason .p22-offseason-year small,
+body.phase22-ui-v1 #offseason .offseason-step .offseason-step-no{
+  font-size:.42rem!important;
+}
+
+/* Tournament archive: controls remain usable on narrow phones. */
+body.phase22-ui-v1 .tourney-archive-controls{
+  min-width:0!important;
+}
+body.phase22-ui-v1 .tourney-archive-controls .arena-archive-picker,
+body.phase22-ui-v1 .tourney-archive-controls select{
+  max-width:100%!important;
+}
+body.phase22-ui-v1 .tourney-archive-controls summary{
+  min-height:38px!important;
+  display:flex!important;
+  align-items:center!important;
+}
+
+/* SKY battle: full-screen control strip always clears iOS home indicator. */
+body.phase22-ui-v1 .sky-battle-overlay{
+  inset:0!important;
+  overflow:hidden!important;
+}
+body.phase22-ui-v1 .sky-battle-stage{
+  min-height:0!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+}
+body.phase22-ui-v1 .sky-battle-controls{
+  padding-bottom:max(8px,env(safe-area-inset-bottom))!important;
+}
+
+/* PRE-MATCH / LIVE: retain compact height but stop essential labels becoming microscopic. */
+body.phase22-ui-v1 .v37r9b3-match-card .p210-fighter-main small{
+  font-size:.36rem!important;
+}
+body.phase22-ui-v1 .v37r9b3-match-card .v37c3-command-desc{
+  font-size:.43rem!important;
+}
+body.phase22-ui-v1 .v37c1-action{
+  font-size:.51rem!important;
+  font-weight:850!important;
+}
+body.phase22-ui-v1 .v37c1-result-row{
+  font-size:.47rem!important;
+}
+body.phase22-ui-v1 .v37c1-result-row b{
+  font-size:.40rem!important;
+}
+
+/* Phone-specific fit. */
+@media(max-width:700px){
+  body.phase22-ui-v1 .arena-bottom-nav button{
+    min-height:56px!important;
+    font-size:.60rem!important;
+  }
+  body.phase22-ui-v1 .offseason-return-dock{
+    bottom:calc(63px + env(safe-area-inset-bottom))!important;
+    width:calc(100% - 12px)!important;
+    min-height:46px!important;
+    padding:7px 9px!important;
+  }
+
+  body.phase22-ui-v1 #playerModal .player-detail-tabs{
+    top:0!important;
+    z-index:35!important;
+    background:#101821!important;
+    border-color:#3b4958!important;
+  }
+  body.phase22-ui-v1 #playerModal .player-detail-tab{
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  body.phase22-ui-v1 .tourney-archive-controls{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:6px!important;
+  }
+  body.phase22-ui-v1 .tourney-archive-controls>*{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  body.phase22-ui-v1 #skyArena .p22-sky-candidate-actions .btn{
+    min-height:34px!important;
+    font-size:.46rem!important;
+  }
+  body.phase22-ui-v1 .sky-fighter-head{
+    font-size:.46rem!important;
+    min-width:0!important;
+  }
+  body.phase22-ui-v1 .sky-fighter-head strong{
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.phase22-ui-v1 .sky-bar span{
+    font-size:.35rem!important;
+  }
+}
+
+@media(max-width:430px){
+  body.phase22-ui-v1 .arena-bottom-nav button{
+    font-size:.56rem!important;
+    padding-left:1px!important;
+    padding-right:1px!important;
+  }
+  body.phase22-ui-v1 .arena-bottom-nav .nav-icon{
+    width:20px!important;
+    height:20px!important;
+  }
+
+  body.phase22-ui-v1 #records .p22-records-summary{
+    gap:4px!important;
+  }
+  body.phase22-ui-v1 #records .p22-records-summary small{
+    font-size:.37rem!important;
+    letter-spacing:0!important;
+  }
+
+  body.phase22-ui-v1 #skyArena .sky-battle-vs{
+    grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr)!important;
+    gap:3px!important;
+  }
+  body.phase22-ui-v1 .sky-battle-controls{
+    grid-template-columns:1.15fr 1fr .85fr!important;
+    gap:4px!important;
+  }
+  body.phase22-ui-v1 .sky-battle-controls .btn{
+    min-width:0!important;
+    padding-left:4px!important;
+    padding-right:4px!important;
+    font-size:.46rem!important;
+  }
+
+  body.phase22-ui-v1 #tourneySelectionCard th,
+  body.phase22-ui-v1 #tourneySelectionCard td{
+    font-size:.63rem!important;
+  }
+
+  body.phase22-ui-v1 .v37r9b3-match-card .v37c3-command-btn{
+    font-size:.49rem!important;
+  }
+}
+
+/* iPad / desktop: keep content centered, don't stretch compact UI excessively. */
+@media(min-width:768px){
+  body.phase22-ui-v1 .offseason-return-dock{
+    max-width:740px!important;
+  }
+  body.phase22-ui-v1 #playerModal .modal-content{
+    width:min(920px,calc(100vw - 28px))!important;
+  }
+}
+</style>
+
 </body>
 </html>
 
