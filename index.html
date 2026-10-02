@@ -34981,6 +34981,422 @@ body.phase22-ui-v1 #clubManagePanel-history .club-life-milestone-row{
 })();
 </script>
 
+
+<style id="phase22-ui21-global-legacy-cleanup">
+/* ============================================================
+   UI-21 — GLOBAL LEGACY CLEANUP
+   Final Phase22 override layer for legacy parchment/brown UI.
+   Presentation only. No gameplay/save/balance changes.
+   ============================================================ */
+
+/* ---------- Global Phase22 hierarchy ---------- */
+body.phase22-ui-v1{
+  --p22-clean-bg:#0f1720;
+  --p22-clean-panel:#141e28;
+  --p22-clean-panel2:#18232d;
+  --p22-clean-line:#3a4857;
+  --p22-clean-text:#e7edf2;
+  --p22-clean-sub:#aeb9c4;
+  --p22-clean-muted:#8f9daa;
+  --p22-clean-gold:#e2c16d;
+}
+body.phase22-ui-v1 .card-title{
+  color:var(--p22-clean-gold)!important;
+  -webkit-text-fill-color:var(--p22-clean-gold)!important;
+  border-color:var(--p22-clean-line)!important;
+  font-size:.86rem!important;
+  line-height:1.15!important;
+  letter-spacing:.07em!important;
+}
+body.phase22-ui-v1 :where(.card .card,.club-manage-panel .debug-card,.club-manage-panel .team-profile-section){
+  box-shadow:none!important;
+}
+body.phase22-ui-v1 :where(.finance-debug-note,.league-news-empty,.match-report-empty,.career-timeline-empty,.skill-summary-empty,.tourney-archive-empty){
+  color:var(--p22-clean-sub)!important;
+  -webkit-text-fill-color:var(--p22-clean-sub)!important;
+}
+body.phase22-ui-v1 select{
+  background:#111a23!important;
+  color:#e4eaf0!important;
+  -webkit-text-fill-color:#e4eaf0!important;
+  border-color:#435263!important;
+}
+body.phase22-ui-v1 select option{
+  background:#111a23!important;
+  color:#e4eaf0!important;
+}
+
+/* ---------- Header microcopy ---------- */
+body.phase22-ui-v1 .masthead-en{font-size:.42rem!important;color:#9ca9b6!important;}
+body.phase22-ui-v1 .masthead-stat small{font-size:.41rem!important;color:#94a2af!important;}
+body.phase22-ui-v1 .masthead-stat span{color:#8f9daa!important;}
+body.phase22-ui-v1 #teamStatsTable .p22-team-you{
+  font-size:.40rem!important;
+  color:#e3c374!important;
+}
+
+/* ---------- TEAM PROFILE / club popover ---------- */
+body.phase22-ui-v1 .team-profile-overlay{
+  background:rgba(5,10,15,.90)!important;
+}
+body.phase22-ui-v1 .team-profile-card{
+  background:#0f1720!important;
+  color:var(--p22-clean-text)!important;
+  border:1px solid #435263!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.48)!important;
+}
+body.phase22-ui-v1 .team-profile-head{
+  background:#141e28!important;
+  border-color:#3b4958!important;
+}
+body.phase22-ui-v1 .team-profile-name{
+  color:#eef2f6!important;
+  -webkit-text-fill-color:#eef2f6!important;
+}
+body.phase22-ui-v1 .team-profile-body{
+  background:#0f1720!important;
+  color:var(--p22-clean-text)!important;
+}
+body.phase22-ui-v1 .team-profile-summary{
+  background:transparent!important;
+}
+body.phase22-ui-v1 .team-profile-summary>div{
+  background:#151f29!important;
+  border:1px solid #374655!important;
+}
+body.phase22-ui-v1 .team-profile-summary small{
+  color:#909eab!important;
+  font-size:.43rem!important;
+}
+body.phase22-ui-v1 .team-profile-summary strong{
+  color:#edf2f6!important;
+  font-family:inherit!important;
+}
+body.phase22-ui-v1 .team-profile-section-title{
+  color:#e1c16f!important;
+  border-color:#3b4958!important;
+  font-family:inherit!important;
+}
+body.phase22-ui-v1 .team-profile-meta{
+  color:#b7c2cc!important;
+}
+body.phase22-ui-v1 .team-profile-roster{
+  color:#dfe6ed!important;
+}
+body.phase22-ui-v1 .team-profile-roster th{
+  background:#17222d!important;
+  color:#d7c079!important;
+  border-color:#3b4958!important;
+}
+body.phase22-ui-v1 .team-profile-roster td{
+  background:#121b24!important;
+  color:#dfe6ed!important;
+  border-color:#303e4b!important;
+}
+body.phase22-ui-v1 .team-profile-roster tr:nth-child(even) td{
+  background:#16212b!important;
+}
+body.phase22-ui-v1 .team-profile-roster .starter{
+  color:#e2c16d!important;
+}
+body.phase22-ui-v1 .team-profile-roster .ovr{
+  color:#f0c86d!important;
+}
+body.phase22-ui-v1 .team-profile-card .rank-trend-card{
+  background:#141e28!important;
+  border-color:#3b4958!important;
+}
+body.phase22-ui-v1 .team-profile-card .rank-trend-head strong{
+  color:#e2c16d!important;
+  font-family:inherit!important;
+}
+body.phase22-ui-v1 .team-profile-card .rank-trend-head small,
+body.phase22-ui-v1 .team-profile-card .rank-trend-empty{
+  color:#aeb9c4!important;
+}
+body.phase22-ui-v1 .team-profile-card .rank-trend-grid{stroke:#364452!important;}
+body.phase22-ui-v1 .team-profile-card .rank-trend-axis,
+body.phase22-ui-v1 .team-profile-card .rank-trend-season{fill:#97a5b2!important;}
+body.phase22-ui-v1 .team-profile-card .rank-trend-line{stroke:#d0a451!important;}
+body.phase22-ui-v1 .team-profile-card .rank-trend-dot{fill:#d5b56f!important;stroke:#775b30!important;}
+
+/* ---------- Player detail legacy surfaces ---------- */
+body.phase22-ui-v1 #playerModal .player-visual-panel,
+body.phase22-ui-v1 #playerModal .player-profile-panel,
+body.phase22-ui-v1 #playerModal .potential-tile,
+body.phase22-ui-v1 #playerModal .player-stat-sheet>div,
+body.phase22-ui-v1 #playerModal .player-collapse-section{
+  background:#141e28!important;
+  border-color:#3a4857!important;
+  color:var(--p22-clean-text)!important;
+  box-shadow:none!important;
+}
+body.phase22-ui-v1 #playerModal .potential-grade-box{
+  background:#101821!important;
+  border-color:#6f5b38!important;
+}
+body.phase22-ui-v1 #playerModal .player-visual-title,
+body.phase22-ui-v1 #playerModal .player-profile-title{
+  color:#e1c16f!important;
+  font-family:inherit!important;
+}
+body.phase22-ui-v1 #playerModal .player-stat-sheet small{
+  color:#929fac!important;
+}
+body.phase22-ui-v1 #playerModal .player-stat-sheet strong{
+  color:#e7edf2!important;
+}
+body.phase22-ui-v1 #playerModal .career-timeline-text,
+body.phase22-ui-v1 #playerModal .career-timeline-empty{
+  color:#b8c3cd!important;
+}
+body.phase22-ui-v1 #playerModal .special-development-active{
+  background:#202b35!important;
+  border-color:#5c4d34!important;
+  color:#e3c474!important;
+}
+
+/* ---------- Dialog choices ---------- */
+body.phase22-ui-v1 .game-dialog-card{
+  background:#111a23!important;
+  border-color:#465566!important;
+  color:#e8edf2!important;
+}
+body.phase22-ui-v1 .game-dialog-choice{
+  background:#17222d!important;
+  border-color:#435263!important;
+  color:#e7edf2!important;
+  box-shadow:none!important;
+}
+body.phase22-ui-v1 .game-dialog-choice strong{
+  color:#eef2f6!important;
+}
+body.phase22-ui-v1 .game-dialog-choice small{
+  color:#aeb9c4!important;
+}
+
+/* ---------- League news / title race ---------- */
+body.phase22-ui-v1 .league-news-copy strong{
+  color:#e7edf2!important;
+}
+body.phase22-ui-v1 .league-news-copy span,
+body.phase22-ui-v1 .league-news-empty,
+body.phase22-ui-v1 .match-report-empty{
+  color:#aeb9c4!important;
+}
+body.phase22-ui-v1 .title-race-panel{
+  background:#141e28!important;
+  border-color:#394756!important;
+}
+body.phase22-ui-v1 .title-race-panel-head{
+  border-color:#344250!important;
+}
+body.phase22-ui-v1 .title-race-panel-head strong{
+  color:#e1c16f!important;
+  font-family:inherit!important;
+}
+body.phase22-ui-v1 .title-race-panel-head small,
+body.phase22-ui-v1 .title-race-name small{
+  color:#96a4b1!important;
+}
+body.phase22-ui-v1 .title-race-row{
+  border-color:#2d3a46!important;
+}
+body.phase22-ui-v1 .title-race-rank{
+  color:#d0ad5d!important;
+}
+body.phase22-ui-v1 .title-race-name{
+  color:#e2e8ee!important;
+}
+body.phase22-ui-v1 .title-race-value{
+  color:#e5c575!important;
+}
+
+/* ---------- Rivalry / epithet / timeline ---------- */
+body.phase22-ui-v1 :where(.player-rivalry-row,.epithet-history-row,.career-timeline-row){
+  background:#141e28!important;
+  border-color:#344250!important;
+  color:#e1e8ee!important;
+}
+body.phase22-ui-v1 :where(.player-rivalry-row,.epithet-history-row,.career-timeline-row) strong{
+  color:#e7edf2!important;
+}
+body.phase22-ui-v1 :where(.player-rivalry-row,.epithet-history-row,.career-timeline-row) small{
+  color:#9eabb8!important;
+}
+body.phase22-ui-v1 .epithet-history-status{
+  background:#18232d!important;
+  border-color:#445263!important;
+  color:#d3b96f!important;
+}
+body.phase22-ui-v1 .epithet-history-status.lost{
+  color:#98a5b2!important;
+  background:#141c24!important;
+}
+
+/* ---------- Tournament / archive ---------- */
+body.phase22-ui-v1 .tourney-round-nav button,
+body.phase22-ui-v1 .tourney-mobile-page-nav button{
+  background:#151f29!important;
+  color:#b8c3cd!important;
+  border-color:#3e4c5a!important;
+  font-family:inherit!important;
+}
+body.phase22-ui-v1 .tourney-round-nav button.active,
+body.phase22-ui-v1 .tourney-mobile-page-nav button.active{
+  background:#273442!important;
+  color:#f0ca72!important;
+  border-color:#91703b!important;
+  box-shadow:inset 0 -2px 0 #c09247!important;
+}
+body.phase22-ui-v1 .tourney-mobile-match{
+  background:#141e28!important;
+  border-color:#3a4857!important;
+}
+body.phase22-ui-v1 .tourney-mobile-match.current-stage,
+body.phase22-ui-v1 .tourney-mobile-match.user-match{
+  border-color:#9a783f!important;
+}
+body.phase22-ui-v1 .tourney-mobile-match .bracket-player{
+  background:#121b24!important;
+  color:#e4eaf0!important;
+  border-color:#303e4b!important;
+}
+body.phase22-ui-v1 .tourney-mobile-match .bracket-player-name{
+  color:#e7edf2!important;
+}
+body.phase22-ui-v1 .tourney-mobile-match .bracket-player-meta{
+  color:#98a5b2!important;
+}
+body.phase22-ui-v1 .tourney-mobile-match .bracket-player-ovr{
+  color:#e6c36e!important;
+}
+body.phase22-ui-v1 .tourney-archive-controls select{
+  background:#111a23!important;
+  color:#e5ebf0!important;
+  -webkit-text-fill-color:#e5ebf0!important;
+  border-color:#435263!important;
+}
+body.phase22-ui-v1 .tourney-archive-controls select option{
+  background:#111a23!important;
+  color:#e5ebf0!important;
+}
+body.phase22-ui-v1 .tourney-archive-summary{
+  background:#141e28!important;
+  color:#cbd4dd!important;
+  border-left-color:#b28745!important;
+}
+body.phase22-ui-v1 .tourney-archive-card .bracket-player-name,
+body.phase22-ui-v1 .tourney-archive-card .bracket-player-ovr,
+body.phase22-ui-v1 .tourney-archive-card #tourneyArchiveSummary strong{
+  color:#e7edf2!important;
+  -webkit-text-fill-color:#e7edf2!important;
+}
+body.phase22-ui-v1 .tourney-archive-empty{
+  color:#aeb9c4!important;
+}
+
+/* ---------- Offseason legacy progress ---------- */
+body.phase22-ui-v1 #offseason .offseason-progress{
+  background:#141e28!important;
+  border-color:#3b4958!important;
+}
+body.phase22-ui-v1 #offseason .offseason-progress-track{
+  background:#273440!important;
+}
+body.phase22-ui-v1 #offseason .offseason-progress-fill{
+  background:#c09247!important;
+}
+
+/* ---------- Legends tiny labels ---------- */
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-stat small{
+  font-size:.42rem!important;
+  color:#9ca9b6!important;
+}
+body.phase22-ui-v1 #clubManagePanel-legends .legend-registry-stat b{
+  color:#e7edf2!important;
+}
+
+/* ---------- Reduce nested visual noise ---------- */
+body.phase22-ui-v1 :where(
+  #clubManagePanel-history,
+  #clubManagePanel-trophy,
+  #clubManagePanel-training,
+  #clubManagePanel-finance,
+  #clubManagePanel-manager,
+  #clubManagePanel-legends,
+  #records,
+  #offseason,
+  #draft,
+  #tournament
+) :where(.card,.debug-card,.team-profile-section){
+  box-shadow:none!important;
+}
+body.phase22-ui-v1 :where(
+  #clubManagePanel-history,
+  #clubManagePanel-trophy,
+  #clubManagePanel-training,
+  #clubManagePanel-finance,
+  #clubManagePanel-manager,
+  #clubManagePanel-legends
+) .card-title{
+  margin-top:10px!important;
+  margin-bottom:7px!important;
+}
+
+/* ---------- Mobile density ---------- */
+@media(max-width:700px){
+  body.phase22-ui-v1 .card-title{
+    font-size:.80rem!important;
+  }
+  body.phase22-ui-v1 .team-profile-card{
+    max-height:calc(100dvh - 10px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;
+  }
+  body.phase22-ui-v1 .team-profile-body{
+    padding:8px!important;
+  }
+  body.phase22-ui-v1 .team-profile-section{
+    margin-top:9px!important;
+  }
+  body.phase22-ui-v1 .team-profile-meta{
+    font-size:.61rem!important;
+    line-height:1.45!important;
+  }
+  body.phase22-ui-v1 .title-race-panel{
+    padding:7px!important;
+  }
+  body.phase22-ui-v1 .tourney-mobile-page-nav button{
+    min-height:34px!important;
+    padding:6px 9px!important;
+  }
+  body.phase22-ui-v1 .tourney-archive-summary{
+    padding:8px!important;
+    font-size:.66rem!important;
+  }
+  body.phase22-ui-v1 #playerModal .player-visual-panel,
+  body.phase22-ui-v1 #playerModal .player-profile-panel{
+    padding:8px!important;
+  }
+}
+
+@media(max-width:430px){
+  body.phase22-ui-v1 .masthead-en{font-size:.40rem!important;}
+  body.phase22-ui-v1 .masthead-stat small{font-size:.40rem!important;}
+  body.phase22-ui-v1 .team-profile-summary{
+    gap:4px!important;
+  }
+  body.phase22-ui-v1 .team-profile-summary>div{
+    padding:7px 4px!important;
+  }
+  body.phase22-ui-v1 .team-profile-summary small{
+    font-size:.40rem!important;
+  }
+  body.phase22-ui-v1 .team-profile-section-title{
+    font-size:.57rem!important;
+  }
+}
+</style>
+
 </body>
 </html>
 
