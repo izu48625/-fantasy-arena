@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FANTASY ARENA V37 R9-C0D.1</title>
 <style>
   :root {
@@ -35708,6 +35708,87 @@ body.phase22-ui-v1 #draft thead th{
   body.phase22-ui-v1 .season-closing-stage{
     transform:scale(.92)!important;
     transform-origin:center!important;
+  }
+}
+</style>
+
+
+<style id="phase22-ui22-safari-final-hotfix">
+/* UI-22.1 — iPhone Safari viewport/touch final hotfix. */
+body.phase22-ui-v1 .arena-bottom-nav{
+  padding-left:env(safe-area-inset-left)!important;
+  padding-right:env(safe-area-inset-right)!important;
+  padding-bottom:env(safe-area-inset-bottom)!important;
+}
+
+/* Remaining interactive controls that were still below comfortable phone size. */
+body.phase22-ui-v1 #clubManagePanel-roster .p229-start-btn{
+  min-height:36px!important;
+  font-size:.50rem!important;
+  touch-action:manipulation!important;
+}
+body.phase22-ui-v1 .record-icon-btn{
+  min-width:36px!important;
+  min-height:36px!important;
+  padding:5px 7px!important;
+  touch-action:manipulation!important;
+}
+body.phase22-ui-v1 .club-back-btn{
+  width:40px!important;
+  height:40px!important;
+  touch-action:manipulation!important;
+}
+body.phase22-ui-v1 .v37r9b3-match-card .v37c3-command-btn,
+body.phase22-ui-v1 #matchHub .v37c3-command-btn{
+  min-height:34px!important;
+  font-size:.49rem!important;
+  touch-action:manipulation!important;
+}
+
+/* Records sticky section header had a legacy parchment background underneath Phase22. */
+body.phase22-ui-v1 #records .records-panel-head{
+  background:rgba(15,23,32,.97)!important;
+  border-color:#3b4958!important;
+  padding:5px 0 7px!important;
+}
+body.phase22-ui-v1 #records .records-panel-head h3{
+  color:#e2c16d!important;
+  -webkit-text-fill-color:#e2c16d!important;
+  font-size:.74rem!important;
+}
+body.phase22-ui-v1 #records .record-icon-btn{
+  background:#1a2530!important;
+  color:#dfe6ed!important;
+  border-color:#465566!important;
+}
+
+/* Safe scrolling endpoint above the persistent nav. */
+body.phase22-ui-v1 :where(
+  #clubManagePanel-roster,
+  #clubManagePanel-history,
+  #clubManagePanel-market,
+  #clubManagePanel-training,
+  #clubManagePanel-finance,
+  #clubManagePanel-manager,
+  #clubManagePanel-legends,
+  #stats,
+  #records,
+  #draft,
+  #tournament,
+  #skyArena,
+  #offseason
+){
+  scroll-padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;
+}
+
+@media(max-width:430px){
+  body.phase22-ui-v1 .record-icon-btn{
+    min-width:34px!important;
+    min-height:34px!important;
+  }
+  body.phase22-ui-v1 .club-back-btn{
+    width:38px!important;
+    height:38px!important;
   }
 }
 </style>
