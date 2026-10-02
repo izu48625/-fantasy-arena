@@ -35397,6 +35397,321 @@ body.phase22-ui-v1 :where(
 }
 </style>
 
+
+<style id="phase22-ui22-final-mobile-qa">
+/* ============================================================
+   UI-22 — FINAL MOBILE QA
+   iPhone Safari safe-area / dynamic viewport / touch / sticky audit.
+   Presentation only. No gameplay/save/balance changes.
+   ============================================================ */
+
+/* Persistent navigation must never cover the last interactive row. */
+body.phase22-ui-v1{
+  padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 .arena-bottom-nav{
+  min-height:calc(62px + env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 .arena-bottom-nav button{
+  min-height:58px!important;
+  touch-action:manipulation!important;
+}
+
+/* Horizontal scrollers must still allow normal page vertical gestures. */
+body.phase22-ui-v1 :where(
+  #tourneySelectionCard .table-container,
+  #clubManagePanel-market .trade-center-clubs,
+  .tourney-mobile-page-nav,
+  #records .records-tabs,
+  #skyArena .p22-sky-zone-tabs,
+  #stats .stats-table-wrap,
+  #stats .team-stats-table-wrap,
+  #clubManagePanel-roster .club-roster-table-wrap,
+  #clubManagePanel-roster .club-skill-book .table-container
+){
+  max-width:100%!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-x pan-y!important;
+}
+
+/* START5 / pre-match full-screen sheet. */
+body.phase22-ui-v1 .v37r9b3-match-screen{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:
+    max(5px,env(safe-area-inset-top))
+    max(5px,env(safe-area-inset-right))
+    max(5px,env(safe-area-inset-bottom))
+    max(5px,env(safe-area-inset-left))!important;
+  align-items:flex-start!important;
+  overflow:hidden!important;
+}
+body.phase22-ui-v1 .v37r9b3-match-card{
+  box-sizing:border-box!important;
+  width:min(680px,100%)!important;
+  max-height:calc(100dvh - max(10px,env(safe-area-inset-top)) - max(10px,env(safe-area-inset-bottom)))!important;
+  margin:auto!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+body.phase22-ui-v1 .v37r9b3-match-card .v37r9b3-screen-actions{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:30!important;
+  padding-bottom:max(9px,env(safe-area-inset-bottom))!important;
+  background:rgba(15,23,32,.98)!important;
+}
+body.phase22-ui-v1 .v37r9b3-match-card .v37r9b3-screen-actions .btn{
+  min-height:44px!important;
+  touch-action:manipulation!important;
+}
+
+/* LIVE result sheet: old 90vh could slip under Safari chrome. */
+body.phase22-ui-v1 .v37c1-live{
+  height:100dvh!important;
+  max-height:100dvh!important;
+}
+body.phase22-ui-v1 .v37c1-result{
+  box-sizing:border-box!important;
+  padding:
+    max(6px,env(safe-area-inset-top))
+    max(6px,env(safe-area-inset-right))
+    max(6px,env(safe-area-inset-bottom))
+    max(6px,env(safe-area-inset-left))!important;
+}
+body.phase22-ui-v1 .v37c1-result-card{
+  max-height:calc(100dvh - max(12px,env(safe-area-inset-top)) - max(12px,env(safe-area-inset-bottom)))!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+body.phase22-ui-v1 .v37c1-result-actions{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:12!important;
+  padding-bottom:max(10px,env(safe-area-inset-bottom))!important;
+  background:rgba(15,23,32,.98)!important;
+}
+body.phase22-ui-v1 .v37c1-result-actions button,
+body.phase22-ui-v1 .v37c1-foot button{
+  min-height:42px!important;
+  touch-action:manipulation!important;
+}
+
+/* Trade negotiation overlay. */
+body.phase22-ui-v1 .trade-overlay{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:
+    max(7px,env(safe-area-inset-top))
+    max(7px,env(safe-area-inset-right))
+    max(7px,env(safe-area-inset-bottom))
+    max(7px,env(safe-area-inset-left))!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+body.phase22-ui-v1 .trade-card{
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - max(14px,env(safe-area-inset-top)) - max(14px,env(safe-area-inset-bottom)))!important;
+  overflow:auto!important;
+  background:#111a23!important;
+  color:#e7edf2!important;
+  border-color:#465566!important;
+}
+body.phase22-ui-v1 .trade-head{
+  position:sticky!important;
+  top:0!important;
+  z-index:20!important;
+  background:rgba(17,26,35,.98)!important;
+  border-color:#354352!important;
+}
+body.phase22-ui-v1 .trade-actions{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:20!important;
+  margin:10px -14px -14px!important;
+  padding:9px 14px max(9px,env(safe-area-inset-bottom))!important;
+  background:rgba(17,26,35,.98)!important;
+  border-top:1px solid #354352!important;
+}
+body.phase22-ui-v1 .trade-actions .btn,
+body.phase22-ui-v1 .trade-close{
+  min-height:42px!important;
+  touch-action:manipulation!important;
+}
+
+/* First-run setup: scrollable between notch and home indicator. */
+body.phase22-ui-v1 .first-run-overlay{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:
+    max(12px,env(safe-area-inset-top))
+    max(10px,env(safe-area-inset-right))
+    max(18px,env(safe-area-inset-bottom))
+    max(10px,env(safe-area-inset-left))!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+body.phase22-ui-v1 .first-run-start{
+  min-height:48px!important;
+  touch-action:manipulation!important;
+}
+
+/* More menu bottom sheet. */
+body.phase22-ui-v1 .p22-menu-overlay{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:
+    max(8px,env(safe-area-inset-top))
+    10px
+    calc(68px + env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 .p22-menu-sheet{
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - 86px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+body.phase22-ui-v1 .p22-menu-btn{
+  min-height:58px!important;
+  touch-action:manipulation!important;
+}
+body.phase22-ui-v1 .p22-menu-close{
+  width:38px!important;
+  height:38px!important;
+  touch-action:manipulation!important;
+}
+
+/* Rival picker bottom sheet. */
+body.phase22-ui-v1 .p22-rival-overlay{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:
+    max(8px,env(safe-area-inset-top))
+    10px
+    max(10px,env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 .p22-rival-sheet{
+  max-height:min(76dvh,680px)!important;
+}
+body.phase22-ui-v1 .p22-rival-option{
+  min-height:48px!important;
+  touch-action:manipulation!important;
+}
+body.phase22-ui-v1 .p22-rival-sheet-close{
+  width:38px!important;
+  height:38px!important;
+  touch-action:manipulation!important;
+}
+
+/* Season opening/closing cinematic: dynamic viewport and safe CTA. */
+body.phase22-ui-v1 .season-transition-overlay,
+body.phase22-ui-v1 .season-closing-overlay{
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:
+    max(14px,env(safe-area-inset-top))
+    max(10px,env(safe-area-inset-right))
+    max(14px,env(safe-area-inset-bottom))
+    max(10px,env(safe-area-inset-left))!important;
+}
+body.phase22-ui-v1 .season-transition-stage,
+body.phase22-ui-v1 .season-closing-stage{
+  max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)!important;
+}
+body.phase22-ui-v1 .season-transition-enter,
+body.phase22-ui-v1 .season-closing-overlay .btn{
+  min-height:46px!important;
+  touch-action:manipulation!important;
+}
+
+/* Sticky action bars must sit above bottom nav, not behind it. */
+body.phase22-ui-v1 #skyArena .sky-r4-actions{
+  bottom:calc(66px + env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 #tourneySelectionCard>.controls{
+  bottom:calc(66px + env(safe-area-inset-bottom))!important;
+}
+body.phase22-ui-v1 .trade-actions{
+  scroll-margin-bottom:calc(72px + env(safe-area-inset-bottom))!important;
+}
+
+/* Tap targets for final mobile decision controls. */
+body.phase22-ui-v1 :where(
+  #clubManagePanel-market .p228-market-tab,
+  #clubManagePanel-market .p228-card-actions .btn,
+  #clubManagePanel-market .p228-trade-action .btn,
+  #draft .p227-actions .btn,
+  #tourneySelectionCard>.controls .btn,
+  #skyArena .sky-r4-actions .btn,
+  #records .records-tabs .btn
+){
+  min-height:42px!important;
+  touch-action:manipulation!important;
+}
+
+/* Compact sticky table headers: avoid covering too much vertical space. */
+body.phase22-ui-v1 #tourneySelectionCard th,
+body.phase22-ui-v1 #teamStatsTable th,
+body.phase22-ui-v1 #draft thead th{
+  top:0!important;
+}
+
+/* Narrow iPhones. */
+@media(max-width:430px){
+  body.phase22-ui-v1{
+    padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;
+  }
+  body.phase22-ui-v1 .v37r9b3-match-screen{
+    padding:
+      max(3px,env(safe-area-inset-top))
+      3px
+      max(3px,env(safe-area-inset-bottom))!important;
+  }
+  body.phase22-ui-v1 .v37r9b3-match-card{
+    max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 6px)!important;
+  }
+  body.phase22-ui-v1 .p22-menu-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  body.phase22-ui-v1 .p22-menu-btn{
+    min-height:56px!important;
+  }
+  body.phase22-ui-v1 .trade-card{
+    margin:0!important;
+  }
+  body.phase22-ui-v1 .trade-actions{
+    margin:9px -10px -10px!important;
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+}
+
+/* Landscape/short viewport rescue. */
+@media(max-height:650px){
+  body.phase22-ui-v1 .v37r9b3-match-card,
+  body.phase22-ui-v1 .trade-card,
+  body.phase22-ui-v1 .p22-menu-sheet{
+    max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 8px)!important;
+  }
+  body.phase22-ui-v1 .season-transition-stage,
+  body.phase22-ui-v1 .season-closing-stage{
+    transform:scale(.92)!important;
+    transform-origin:center!important;
+  }
+}
+</style>
+
 </body>
 </html>
 
