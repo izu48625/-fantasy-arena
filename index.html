@@ -35793,6 +35793,44 @@ body.phase22-ui-v1 :where(
 }
 </style>
 
+
+<style id="phase22-ui22-1-safari-hotfix">
+/* UI-22.1 — iPhone Safari final hotfix */
+body.phase22-ui-v1 :where(
+  .record-icon-btn,
+  .p229-start-btn,
+  #playerModal .p25-skill-role,
+  #playerModal .p25-skill-tag,
+  .tourney-mobile-page-nav button
+){
+  touch-action:manipulation!important;
+}
+body.phase22-ui-v1 .record-icon-btn{
+  min-width:36px!important;
+  min-height:36px!important;
+}
+body.phase22-ui-v1 #clubManagePanel-roster .p229-start-btn{
+  min-height:36px!important;
+}
+body.phase22-ui-v1 .tourney-mobile-page-nav button{
+  min-height:36px!important;
+}
+body.phase22-ui-v1 #playerModal .p25-skill-role,
+body.phase22-ui-v1 #playerModal .p25-skill-tag{
+  min-height:22px!important;
+}
+
+/* Preserve vertical room while preventing the Safari toolbar from hiding last actions. */
+@media(max-width:430px){
+  body.phase22-ui-v1 .arena-bottom-nav{
+    padding-bottom:max(env(safe-area-inset-bottom),2px)!important;
+  }
+  body.phase22-ui-v1 .offseason-return-dock{
+    bottom:calc(64px + env(safe-area-inset-bottom))!important;
+  }
+}
+</style>
+
 </body>
 </html>
 
