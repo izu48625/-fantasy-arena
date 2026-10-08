@@ -90,7 +90,14 @@ node tools/phase23-audit.mjs index.html --strict
 node tools/phase23-audit.mjs index.html --json
 ```
 
-### M2 — Ordered source manifest
+### M2 — Ordered source manifest — TOOLING READY
+
+The deterministic extractor/rebuilder tooling is now available:
+
+- `tools/phase23-extract.mjs`
+- `tools/phase23-build.mjs`
+
+These tools were parity-tested on a representative interleaved HTML/style/script sample. The actual generated `src/phase23/` tree is intentionally not committed until the current formal baseline is extracted and verified.
 
 Create a source tree without changing runtime output:
 
@@ -219,4 +226,4 @@ M1 establishes the safety rails only. `index.html` remains untouched, so:
 - UI behavior: unchanged
 - GitHub Pages behavior: unchanged
 
-Next task: **M2 ordered source manifest + deterministic build skeleton.**
+Next task: **run the M2 extractor against the formal baseline, verify SHA-256 parity, then commit the generated ordered source tree without changing `index.html`.**
